@@ -5,8 +5,9 @@
 #pragma once
 #include "client.h"
 
-// （通过指针）全局化client对象
+// 全局化client对象
 extern Client * g_pClient ;
+extern CString g_CurAccount;
 
 
 // CChatRoomClientDlg 对话框

@@ -183,7 +183,7 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="CChatZone.h" />
+    <ClInclude Include="CChatDlg.h" />
     <ClInclude Include="ChatRoomClient.h" />
     <ClInclude Include="ChatRoomClientDlg.h" />
     <ClInclude Include="client.h" />
@@ -193,7 +193,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CChatZone.cpp" />
+    <ClCompile Include="CChatDlg.cpp" />
     <ClCompile Include="ChatRoomClient.cpp" />
     <ClCompile Include="ChatRoomClientDlg.cpp" />
     <ClCompile Include="client.cpp" />

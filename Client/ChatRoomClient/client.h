@@ -16,6 +16,8 @@
 
 extern bool g_isLogin;
 extern char g_recvMessage[200];
+extern HWND  g_hpWndChat;
+extern CEdit * g_hpEditChatRecord;
 
 enum DataPackType {
 	login = 1,//µÇÂ¼ÀàÐÍ
@@ -62,5 +64,5 @@ void Register(Client* client,const char* pAccount,const char* password);
 
 void SendMsg(Client* pClient, const char* pMsg);
 
-DWORD CALLBACK recvProc(LPVOID arg);
-
+DWORD CALLBACK recvLoginProc(LPVOID arg);
+DWORD CALLBACK recvMessageProc(LPVOID arg);

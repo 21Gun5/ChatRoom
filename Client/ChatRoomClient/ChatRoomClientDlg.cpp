@@ -10,13 +10,12 @@
 //#include "client.h"
 //#include "data.h"
 #include <string>
-#include "CChatZone.h"
+#include "CChatDlg.h"
 
 
 Client client("127.0.0.1", 10086);
-// 
 Client * g_pClient = &client;
-
+CString g_CurAccount = NULL;
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -115,7 +114,8 @@ BOOL CChatRoomClientDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO: 在此添加额外的初始化代码
-
+	
+	// 创建线程来注册/登录
 	CreateThread(0, 0, recvProc, &client, 0, 0);
 
 	
@@ -164,14 +164,11 @@ void CChatRoomClientDlg::OnPaint()
 	}
 }
 
-//当用户拖动最小化窗口时系统调用此函数取得光标
-//显示。
+//当用户拖动最小化窗口时系统调用此函数取得光标显示。
 HCURSOR CChatRoomClientDlg::OnQueryDragIcon()
 {
 	return static_cast<HCURSOR>(m_hIcon);
 }
-
-
 
 void CChatRoomClientDlg::OnClickedButtonRegister()
 {
@@ -207,8 +204,6 @@ void CChatRoomClientDlg::OnClickedButtonRegister()
 	}
 }
 
-
-
 void CChatRoomClientDlg::OnClickedButtonLogin()
 {
 	// TODO: 在此添加控件通知处理程序代码
@@ -237,27 +232,16 @@ void CChatRoomClientDlg::OnClickedButtonLogin()
 	else
 	{
 		Login(&client,ssuserName,sspassWord);
-		//MessageBox(CString("登录成功 \n用户名: ") + userName + "\n" + CString("密   码: ") + passWord);
+		Sleep(1000);// 等会儿另一个线程
+		if (g_isLogin)
+		{
+			g_CurAccount = ssuserName;// 设置当前用户
 
-		//if (g_isLogin)
-		//{
-			//ShowWindow(SW_HIDE);
-			//// 创建模块对话框
-			//CChatZone chatZoneDlg(this);
-			//// 运行对话框
-			//chatZoneDlg.DoModal();
-			////CreateThread(0, 0, recvProc, &client, 0, 0);
-		//}
+			CChatDlg chatZoneDlg(this);
+			chatZoneDlg.DoModal();
+			//// 新开一个线程，接收消息
+			//CreateThread(0, 0, recvProc2, &g_pClient, 0, 0);
+		}
 
 	}
 }
-
-
-//static DWORD CALLBACK  CChatRoomClientDlg::recvProc(LPVOID arg)
-
-//DWORD  CChatRoomClientDlg::recvProc(LPVOID arg)
-//{
-//	// TODO: 在此处添加实现代码.
-//
-//	return 0;
-//}
