@@ -13,25 +13,28 @@
 //#include "data.h"
 #pragma comment(lib,"ws2_32.lib")
 
-
+// 全局变量
 extern bool g_isLogin;
 extern char g_recvMessage[200];
-extern HWND  g_hpWndChat;
-extern CEdit * g_hpEditChatRecord;
-
+extern HWND  g_hWndChat;
+extern CEdit * g_pEditChatRecord;
+extern CListCtrl * g_pListFriendList;
+// 数据包类型
 enum DataPackType {
 	login = 1,//登录类型
 	registe = 2,
 	sendMultiMsg = 3,
-};
 
+	addFriend = 5,
+	getFriendList = 6
+};
+// 网络数据的结构
 #pragma pack(push,1)
 struct DataPack
 {
 	DataPackType type;
 	uint32_t	 size;
 };
-
 struct DataPackResult {
 	uint32_t	type;
 	int32_t		status;
@@ -39,8 +42,7 @@ struct DataPackResult {
 	char		data[1];
 };
 #pragma pack(pop)
-
-
+// 客户端socket
 class Client {
 
 	SOCKET m_hSocket;
@@ -56,13 +58,14 @@ public:
 	DataPackResult* recv();
 	void freeResult(DataPackResult* p);
 };
-
-
+// 功能函数
 void Login(Client* client,const char* pAccount,const char* password);
-
 void Register(Client* client,const char* pAccount,const char* password);
-
 void SendMsg(Client* pClient, const char* pMsg);
-
+void AddFriend(Client* pClient, const char* pFriendName);
+void AccpetAddFriend(Client* pClient, const char* pFriendName);
+void RefuseAddFriend(Client* pClient, const char* pFriendName);
+void GetFriendList(Client* pClient);
+// 回调函数（接收消息）
 DWORD CALLBACK recvLoginProc(LPVOID arg);
 DWORD CALLBACK recvMessageProc(LPVOID arg);

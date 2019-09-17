@@ -69,8 +69,8 @@ CChatRoomClientDlg::CChatRoomClientDlg(CWnd* pParent /*=nullptr*/)
 void CChatRoomClientDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_EDIT_USR, m_userName);
-	DDX_Control(pDX, IDC_EDIT_PWD, m_passWord);
+	DDX_Control(pDX, IDC_EDIT_USR, m_EditUserName);
+	DDX_Control(pDX, IDC_EDIT_PWD, m_EditPassWord);
 }
 
 BEGIN_MESSAGE_MAP(CChatRoomClientDlg, CDialogEx)
@@ -116,7 +116,7 @@ BOOL CChatRoomClientDlg::OnInitDialog()
 	// TODO: 在此添加额外的初始化代码
 	
 	// 创建线程来注册/登录
-	CreateThread(0, 0, recvProc, &client, 0, 0);
+	CreateThread(0, 0, recvLoginProc, &client, 0, 0);
 
 	
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
@@ -176,8 +176,8 @@ void CChatRoomClientDlg::OnClickedButtonRegister()
 	CString userName, passWord;
 
 	// 获取密码和用户框的内容
-	m_userName.GetWindowTextW(userName);
-	m_passWord.GetWindowTextW(passWord);
+	m_EditUserName.GetWindowTextW(userName);
+	m_EditPassWord.GetWindowTextW(passWord);
 
 	// CString转const char *
 	//const char * suserName = (LPCSTR)(LPCTSTR)userName;
@@ -210,8 +210,8 @@ void CChatRoomClientDlg::OnClickedButtonLogin()
 	CString userName, passWord;
 
 	// 获取密码和用户框的内容
-	m_userName.GetWindowTextW(userName);
-	m_passWord.GetWindowTextW(passWord);
+	m_EditUserName.GetWindowTextW(userName);
+	m_EditPassWord.GetWindowTextW(passWord);
 
 	// CString转const char *
 	size_t  i;

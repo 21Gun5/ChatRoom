@@ -21,16 +21,24 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 public:
-	afx_msg void OnClose();
-	CEdit m_EditFindFriend;
-	virtual BOOL OnInitDialog();
-//	CString m_currentAccount;
 	CEdit m_EditChatInput;
+	CEdit m_EditChatRecord;
+	CEdit m_EditCurrentAccount;
+	CEdit m_EditFriendName;
+
+	virtual BOOL OnInitDialog();
+	afx_msg void OnClose();
 	afx_msg void OnClickedButtonSend();
 	afx_msg void OnClickedButtonClean();
+
 //	afx_msg void OnUpdateEditChat();
-	CEdit m_EditChatRecord;
 //	afx_msg void OnTimer(UINT_PTR nIDEvent);
 //	int RecvMessage(LPVOID arg);
-	CEdit m_curentAccount;
+//	CString m_currentAccount;
+
+	
+	afx_msg void OnClickedButtonAddfriend();
+//	afx_msg void OnClickedButtonGetfriendlist();
+
+	CListCtrl m_ListFriendList;
 };

@@ -27,11 +27,12 @@ CChatDlg::~CChatDlg()
 void CChatDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_EDIT_FINDFRIEND, m_EditFindFriend);
+	DDX_Control(pDX, IDC_EDIT_FINDFRIEND, m_EditFriendName);
 	//  DDX_Text(pDX, IDC_STATIC_CURUSER, m_currentAccount);
 	DDX_Control(pDX, IDC_EDIT_CHAT, m_EditChatInput);
 	DDX_Control(pDX, IDC_EDIT_RECORD, m_EditChatRecord);
-	DDX_Control(pDX, IDC_EDIT_CURUSR, m_curentAccount);
+	DDX_Control(pDX, IDC_EDIT_CURUSR, m_EditCurrentAccount);
+	DDX_Control(pDX, IDC_LIST_FRIENDLIST, m_ListFriendList);
 }
 
 
@@ -39,12 +40,63 @@ BEGIN_MESSAGE_MAP(CChatDlg, CDialogEx)
 	ON_WM_CLOSE()
 	ON_BN_CLICKED(IDC_BUTTON_SEND, &CChatDlg::OnClickedButtonSend)
 	ON_BN_CLICKED(IDC_BUTTON_CLEAN, &CChatDlg::OnClickedButtonClean)
-//	ON_EN_UPDATE(IDC_EDIT_CHAT, &CChatZone::OnUpdateEditChat)
-//ON_WM_TIMER()
+	ON_BN_CLICKED(IDC_BUTTON_ADDFRIEND, &CChatDlg::OnClickedButtonAddfriend)
 END_MESSAGE_MAP()
 
 
 // CChatZone 消息处理程序
+
+
+
+
+
+BOOL CChatDlg::OnInitDialog()
+{
+	CDialogEx::OnInitDialog();
+
+	// TODO:  在此添加额外的初始化
+
+	// 获取本窗口句柄
+	g_hWndChat = this->m_hWnd;
+
+	// 获取聊天记录框的控件句柄
+	g_pEditChatRecord = (CEdit*)GetDlgItem(IDC_EDIT_RECORD);
+
+	//获取好友列表的列表控件句柄
+	CListCtrl *pFriendList = (CListCtrl *)GetDlgItem(IDC_LIST_FRIENDLIST);
+	g_pListFriendList = pFriendList;
+
+	// 好友列表初始化（设置风格、插入列
+	pFriendList->SetExtendedStyle(LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
+	pFriendList->InsertColumn(0, L"序号", LVCFMT_CENTER, 40);
+	pFriendList->InsertColumn(1, L"姓名", LVCFMT_CENTER, 80);
+
+
+	// 搜索好友编辑框的默认值
+	CEdit*  pEditFindFri = (CEdit*)GetDlgItem(IDC_EDIT_FINDFRIEND);//获取相应的编辑框ID
+	pEditFindFri->SetWindowText(_T("请输入好友姓名")); //设置默认显示的内容 
+
+	// 新开一个线程，接收消息
+	CreateThread(0, 0, recvMessageProc, &g_pClient, 0, 0);
+
+	// 显示当前账号
+	CEdit*  pEditCurUsr = (CEdit*)GetDlgItem(IDC_EDIT_CURUSR);//获取相应的编辑框ID
+	pEditCurUsr->SetWindowText(g_CurAccount);
+
+	/*UpdateData(TRUE);
+	char buff[30];
+	sprintf_s(buff, " %s", g_CurAccount);
+	m_currentAccount = buff;
+	UpdateData(FALSE);
+	*/
+
+
+	// 获取好友列表
+	GetFriendList(g_pClient);
+
+	return TRUE;  // return TRUE unless you set the focus to a control
+				  // 异常: OCX 属性页应返回 FALSE
+}
 
 
 void CChatDlg::OnClose()
@@ -59,43 +111,6 @@ void CChatDlg::OnClose()
 	//ShowWindow(SW_NORMAL);// 隐藏主窗口（当关闭会话框时再显示
 
 	CDialogEx::OnClose();
-}
-
-
-BOOL CChatDlg::OnInitDialog()
-{
-	CDialogEx::OnInitDialog();
-
-	// TODO:  在此添加额外的初始化
-
-	// 获取本窗口句柄
-	g_hpWndChat = this->m_hWnd;
-
-	// 获取聊天记录框的控件句柄
-	g_hpEditChatRecord = (CEdit*)GetDlgItem(IDC_EDIT_RECORD);
-
-
-	// 搜索好友编辑框的默认值
-	CEdit*  pEditFindFri = (CEdit*)GetDlgItem(IDC_EDIT_FINDFRIEND);//获取相应的编辑框ID
-	pEditFindFri->SetWindowText(_T("请输入好友姓名")); //设置默认显示的内容 
-
-	// 新开一个线程，接收消息
-	CreateThread(0, 0, recvMessageProc, &g_pClient, 0, 0);
-
-	// 显示当前账号
-	CEdit*  pEditCurUsr = (CEdit*)GetDlgItem(IDC_EDIT_CURUSR);//获取相应的编辑框ID
-	pEditCurUsr->SetWindowText(g_CurAccount);
-	/*UpdateData(TRUE);
-	char buff[30];
-	sprintf_s(buff, " %s", g_CurAccount);
-	m_currentAccount = buff;
-	UpdateData(FALSE);
-*/
-
-
-
-	return TRUE;  // return TRUE unless you set the focus to a control
-				  // 异常: OCX 属性页应返回 FALSE
 }
 
 
@@ -152,3 +167,37 @@ void CChatDlg::OnClickedButtonClean()
 
 }
 
+
+
+void CChatDlg::OnClickedButtonAddfriend()
+{
+	// TODO: 在此添加控件通知处理程序代码
+
+	// 获取好友名字
+	CString friendName;
+	m_EditFriendName.GetWindowTextW(friendName);
+
+	// CString转const char *
+	size_t  i;
+	const wchar_t* wstr = (LPCTSTR)friendName;
+	char sfriendName[20] = { 0 };
+	setlocale(LC_ALL, "chs");
+	wcstombs_s(&i, sfriendName, wstr, wcslen(wstr));
+	const char * ssfriendName = sfriendName;//不加则插入数据库失败
+	setlocale(LC_ALL, "C");
+
+	// 判断内容是否为空
+	if (friendName.IsEmpty())
+		MessageBox(L"不可为空");
+	else
+	{
+		AddFriend(g_pClient, ssfriendName);
+	}
+}
+
+
+//void CChatDlg::OnClickedButtonGetfriendlist()
+//{
+//	// TODO: 在此添加控件通知处理程序代码
+//	GetFriendList(g_pClient);
+//}
