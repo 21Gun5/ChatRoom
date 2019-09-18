@@ -183,6 +183,7 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="base64.h" />
     <ClInclude Include="CChatDlg.h" />
     <ClInclude Include="ChatRoomClient.h" />
     <ClInclude Include="ChatRoomClientDlg.h" />
@@ -193,6 +194,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="base64.cpp" />
     <ClCompile Include="CChatDlg.cpp" />
     <ClCompile Include="ChatRoomClient.cpp" />
     <ClCompile Include="ChatRoomClientDlg.cpp" />

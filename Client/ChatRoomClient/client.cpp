@@ -8,6 +8,7 @@
 #include "CChatDlg.h"
 #include "resource.h"
 #include "ChatRoomClientDlg.h"
+#include "base64.h"
 
 // 全局变量
 bool g_isLogin = false;// 是否登录
@@ -32,28 +33,125 @@ Client::Client(const char* serverIp, short port)
 }
 void Client::send(DataPackType type, const char* data, uint32_t size)
 {
-	if (size == -1) {
-		size = strlen(data);
-	}
+
+
+	//// base64加密
+	//std::string tmp = (char*)&dp;
+	//std::string dpEncode = base64_encode(reinterpret_cast<const unsigned char*>(tmp.c_str()), tmp.length());
+	//::send(m_hSocket, dpEncode.c_str(), sizeof(dp), 0);
+	//MessageBox(NULL, dpEncode.c_str(), NULL,0);
+	// 异或加密
+	//std::string buff = (char*)&dp;
+	//::send(m_hSocket, encode(buff), sizeof(dp), 0);
+
+	// 不加密
+	//::send(m_hSocket, (char*)&dp, sizeof(dp), 0);
+	
+	//if (size == -1)
+	//{
+	//	//size = strlen(data);
+	//	size = sizeof(dataEncode);
+	//}
+
+
+
+	// base64加密
+	std::string tmp = data;
+	std::string dataEncode = base64_encode(reinterpret_cast<const unsigned char*>(tmp.c_str()), tmp.length());
+
+	size = sizeof(dataEncode);
 	DataPack dp = { type,size };
+
 	::send(m_hSocket, (char*)&dp, sizeof(dp), 0);
-	::send(m_hSocket, data, size, 0);
+	::send(m_hSocket, dataEncode.c_str(), sizeof(dataEncode), 0);
+	// 不加密
+	//::send(m_hSocket, data, size, 0);
+	// 异或加密
+	//std::string buff2 = data;
+	//::send(m_hSocket, encode(buff2), size, 0);
+
 }
 DataPackResult* Client::recv()
 {
 	DataPackResult head = { 0 };
-	if (::recv(m_hSocket, (char*)&head, sizeof(head) - 1, 0) != sizeof(head) - 1) {
+	//// 收到后先解密
+	//int recvSize = ::recv(m_hSocket,(char*)&head, sizeof(head) - 1, 0);
+	//std::string base64Str = (char*)&head;
+	//std::string headDecode = base64_decode(base64Str);
+	//if (recvSize != sizeof(headDecode) - 1)
+	//{
+	//	return NULL;
+	//}
+
+	if (::recv(m_hSocket, (char*)&head, sizeof(head) - 1, 0) != sizeof(head) - 1)
+	{
 		return NULL;
 	}
+
 	DataPackResult* pBuff = (DataPackResult*)malloc(sizeof(DataPackResult) + head.size);
 	memset(pBuff, 0, head.size + sizeof(DataPackResult));
 	memcpy(pBuff, &head, sizeof(head));
-	if (::recv(m_hSocket, pBuff->data, pBuff->size, 0) != pBuff->size) {
+
+	//// 收到后先解密
+	//int recvSize = ::recv(m_hSocket, pBuff->data, sizeof(head) - 1, 0);
+	//std::string base64Str; //中间变量
+	//// pBuff->data
+	//base64Str = pBuff->data;
+	//std::string pBuffDataDecode = base64_decode(base64Str);
+	//if (recvSize != pBuff->size)
+	//{
+	//	free(pBuff);
+	//	return NULL;
+	//}
+
+	if (::recv(m_hSocket, pBuff->data, pBuff->size, 0) != pBuff->size) 
+	{
 		free(pBuff);
 		return NULL;
 	}
 	return (DataPackResult*)pBuff;
 }
+//DataPackResult* Client::recv()
+//{
+//	DataPackResult head = { 0 };
+//	
+//	// 收到后先解密
+//	DataPackResult * phead = &head;
+//	int recvSize = ::recv(m_hSocket, (char*)phead, sizeof(head) - 1, 0);
+//
+//	std::string tmp = (char*)phead;
+//	std::string pheadDecode = base64_decode(tmp);
+//	head = (DataPackResult )*pheadDecode.c_str();
+//	//head = *headDecode.c_str();
+//	//phead = *ppheadDecode;
+//	//memcpy(head, &headDecode, sizeof(headDecode));
+//	if (recvSize != sizeof(head) - 1)
+//	{
+//		return NULL;
+//	}
+//	/*if (::recv(m_hsocket, (char*)&head, sizeof(head) - 1, 0) != sizeof(head) - 1)
+//	{
+//		return null;
+//	}*/
+//
+//	DataPackResult* pBuff = (DataPackResult*)malloc(sizeof(DataPackResult) + head.size);
+//	memset(pBuff, 0, head.size + sizeof(DataPackResult));
+//	memcpy(pBuff, &head, sizeof(head));
+//
+//	// 收到后先解密
+//	//char * ppBuffDate = &( pBuff->data);
+//	char * buff=NULL;
+//	int recvSize2 = ::recv(m_hSocket, buff, sizeof(head) - 1, 0);
+//	std::string base64Str = buff;
+//	std::string pBuffDataDecode = base64_decode(base64Str);
+//	memcpy(pBuff->data, &buff, sizeof(buff));
+//	if (recvSize2 != pBuff->size)
+//	{
+//		free(pBuff);
+//		return NULL;
+//	}
+//	return (DataPackResult*)pBuff;
+//}
 void Client::freeResult(DataPackResult* p) {
 	free(p);
 }
@@ -129,7 +227,8 @@ DWORD CALLBACK recvLoginProc(LPVOID arg)
 		{
 			CString tips;
 			char buff[100];
-			sprintf_s(buff, "失败:%s\n", pResult->data);
+			//base64_decode(base64_decode(pResult->data).c_str()).c_str()
+			sprintf_s(buff, "失败:%s\n", base64_decode(pResult->data).c_str());
 			tips = buff;
 
 			MessageBox(NULL, tips, "提示", 0);
@@ -151,73 +250,8 @@ DWORD CALLBACK recvLoginProc(LPVOID arg)
 			MessageBox(NULL, "注册成功", "提示", MB_OK);
 			break;
 		}
-
-		//case sendMultiMsg:
-		//{
-		//	if (pResult->status == -1) 
-		//	{ 
-		//		// 来自服务端通知
-		//		CString tips;
-		//		sprintf_s(g_recvMessage, "新消息: %s\n", pResult->data);
-		//		tips = g_recvMessage;
-		//		MessageBox(NULL, tips, L"提示", 0);
-		//		//// 将收到的消息显示到聊天记录框
-		//		//CEdit * pEditRecord = (CEdit*)GetDlgItem(g_hpWndChat,IDC_EDIT_RECODE);//必须进行强制类型转换
-		//		//CString strTime; //获取系统时间 　　
-		//		//CTime tm;
-		//		//tm = CTime::GetCurrentTime();
-		//		//strTime = tm.Format("%Y-%m-%d %X   ");
-		//		//CString oldRecord;
-		//		//pEditRecord->GetWindowText(oldRecord);
-		//		//pEditRecord->SetWindowText(oldRecord + "\r\n" + strTime + "Recv:   " + g_recvMessage);
-		//		
-		//		//printf("有新的消息: %s\n", pResult->data);
-		//	}
-		//	else 
-		//	{
-		//		// 服务端的回复
-		//		printf("\t消息发送成功\n");
-		//	}
-		//}
-
 		}
 	}
-
-	//// 登录之后的循环
-	//while (g_isLogin)
-	//{
-	//	pResult = pClient->recv();
-	//	// 没收到则继续收
-	//	if (pResult == NULL)
-	//	{
-	//		continue;
-	//	}
-	//	// 操作失败则弹窗提醒
-	//	if (pResult->status > 0)
-	//	{
-	//		CString tips;
-	//		char buff[100];
-	//		sprintf_s(buff, "失败:%s\n", pResult->data);
-	//		tips = buff;
-	//		MessageBox(NULL, tips, L"提示", 0);
-	//		continue;
-	//	}
-	//	if (pResult->type == sendMultiMsg)
-	//	{
-	//		if (pResult->status == -1)
-	//		{
-	//			// 来自服务端通知
-	//			printf("有新的消息: %s\n", pResult->data);
-	//		}
-	//		else
-	//		{
-	//			// 服务端的回复
-	//			printf("\t消息发送成功\n");
-	//		}
-	//	}
-	//}
-
-
 	return 0;
 }
 DWORD CALLBACK recvMessageProc(LPVOID arg)
@@ -240,7 +274,7 @@ DWORD CALLBACK recvMessageProc(LPVOID arg)
 		{
 			CString tips;
 			char buff[100];
-			sprintf_s(buff, "失败:%s\n", pResult->data);
+			sprintf_s(buff, "失败:%s\n", base64_decode(pResult->data).c_str());
 			tips = buff;
 
 			MessageBox(NULL, tips, "提示", 0);
@@ -254,7 +288,7 @@ DWORD CALLBACK recvMessageProc(LPVOID arg)
 			if (pResult->status == -1)
 			{
 				CString tips;
-				sprintf_s(g_recvMessage, "%s\n", pResult->data);
+				sprintf_s(g_recvMessage, "%s\n", base64_decode(pResult->data).c_str());
 				tips = g_recvMessage;
 				//MessageBox(NULL, tips, L"提示", 0);
 
@@ -285,7 +319,7 @@ DWORD CALLBACK recvMessageProc(LPVOID arg)
 			if (pResult->status == -1)
 			{
 				// 提取消息
-				sprintf_s(g_recvMessage, "%s\n", pResult->data);
+				sprintf_s(g_recvMessage, "%s\n", base64_decode(pResult->data).c_str());
 				// 新+旧+时间，再显示在聊天记录框
 				CEdit * pEditRecord = g_pEditChatRecord;// 从全局变量获取控件句柄
 				CString strTime = CTime::GetCurrentTime().Format("%Y-%m-%d %X   ");
@@ -309,23 +343,23 @@ DWORD CALLBACK recvMessageProc(LPVOID arg)
 			if (pResult->status == -1) 
 			{ // 来自服务端通知: 有人添加自己为好友
 				CStringA tips;
-				tips.Format("用户[%s] 要添加你为好友,是否同意?",pResult->data);
+				tips.Format("用户[%s] 要添加你为好友,是否同意?",base64_decode(pResult->data).c_str());
 
 				// 弹出`是否`对话框窗来获取用户的选择
 				if (IDYES == MessageBoxA(0, tips, "提示", MB_YESNO))
 				{
 					// 选择了是, 就将同意好友添加请求发送给服务端
-					AccpetAddFriend(g_pClient, pResult->data);
+					AccpetAddFriend(g_pClient, base64_decode(pResult->data).c_str());
 				}
 				else 
 				{
 					// 选择了否, 就将同意好友添加请求发送给服务端
-					RefuseAddFriend(g_pClient, pResult->data);
+					RefuseAddFriend(g_pClient, base64_decode(pResult->data).c_str());
 				}
 			}
 			else 
 			{
-				printf("添加好友的结果: %s\n", pResult->data);
+				printf("添加好友的结果: %s\n", base64_decode(pResult->data).c_str());
 			}
 			break;
 		}
@@ -338,7 +372,9 @@ DWORD CALLBACK recvMessageProc(LPVOID arg)
 			// 切割好友列表
 			char* context;
 			char *p;
-			p = strtok_s(pResult->data, "\n", &context);// 用2将1分隔得3
+			char data[100];
+			memcpy_s(data, 100, base64_decode(pResult->data).c_str(),100);
+			p = strtok_s(data, "\n", &context);// 用2将1分隔得3
 			int i = 1;
 			// 将其填充至好友列表
 			while (p != nullptr)

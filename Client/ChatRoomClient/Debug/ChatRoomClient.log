@@ -1,4 +1,7 @@
 ﻿  stdafx.cpp
+  base64.cpp
+c:\users\rylynn\source\repos\15pb\chatroomclient\base64.cpp(70): warning C4267: “=”: 从“size_t”转换到“unsigned char”，可能丢失数据
+c:\users\rylynn\source\repos\15pb\chatroomclient\base64.cpp(87): warning C4267: “=”: 从“size_t”转换到“unsigned char”，可能丢失数据
   CChatDlg.cpp
   ChatRoomClient.cpp
   ChatRoomClientDlg.cpp

@@ -10,6 +10,7 @@
 #include <windows.h>
 #include <conio.h>
 #include <atlstr.h>
+#include <string>
 //#include "data.h"
 #pragma comment(lib,"ws2_32.lib")
 
@@ -63,7 +64,6 @@ void Login(Client* client,const char* pAccount,const char* password);
 void Register(Client* client,const char* pAccount,const char* password);
 void SendMultiMsg(Client* pClient, const char* pMsg);
 void SendMsg(Client* pClient, const char* pMsg, CString fromWhere, CString toWhere);
-
 void AddFriend(Client* pClient, const char* pFriendName);
 void AccpetAddFriend(Client* pClient, const char* pFriendName);
 void RefuseAddFriend(Client* pClient, const char* pFriendName);
@@ -71,3 +71,4 @@ void GetFriendList(Client* pClient);
 // 回调函数（接收消息）
 DWORD CALLBACK recvLoginProc(LPVOID arg);
 DWORD CALLBACK recvMessageProc(LPVOID arg);
+
