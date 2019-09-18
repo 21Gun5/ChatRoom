@@ -1,2 +1,8 @@
-﻿  CChatDlg.cpp
+﻿  stdafx.cpp
+  CChatDlg.cpp
+  ChatRoomClient.cpp
+  ChatRoomClientDlg.cpp
+  client.cpp
+  data.cpp
+  正在生成代码...
   ChatRoomClient.vcxproj -> C:\Users\Rylynn\source\repos\15PB\Debug\ChatRoomClient.exe

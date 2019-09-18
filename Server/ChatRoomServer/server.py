@@ -90,7 +90,8 @@ class Handler():
                                "用户已存在")
             return
         # 2. 保存账号到数据库
-        passwd = md5(self.args[1])
+        # passwd = md5(self.args[1])# here
+        passwd = self.args[1]
         sql = "insert into chatroom_user (account, passwd) VALUE('%s','%s');" \
               % (self.args[0], passwd)
         # 执行sql语句
@@ -137,6 +138,7 @@ class Handler():
         _clientDict[self.account] = self
 
     def sendMultiMsg(self):
+        print('广播消息 参数: ', self.args)
         msg = self.args[0]
         for k, v in _clientDict.items():
             if (k == self.account):
@@ -147,9 +149,24 @@ class Handler():
                                msg)
 
     def sendMsg(self):
-        pass
+        print('单播消息 参数: ', self.args)
+        msg = self.args[0]
+        recvFrom = self.args[1]
+        sendTo = self.args[2]
+
+        for k, v in _clientDict.items():
+            if (k == self.account):
+                continue
+            if (k != sendTo):
+                continue
+            sendToclientSocket(v.socket,
+                               Request.sendMsg.value,
+                               ResultCode.notify.value,
+                               msg + ' [from: '+ recvFrom+']')
+
 
     def addFriend(self):
+        print('加好友 参数: ', self.args)
         print('添加好友请求, self = ', self.account)
 
         # 添加好友
@@ -226,6 +243,7 @@ class Handler():
             pass
 
     def getFriendList(self):
+        print('获取好友列表 参数: ', self.args)
         # 查询数据库得到所有好友
         sql = "select * from chatroom_user where id in " \
               "(select user_2 from chatroom_friend where user_1 = %d);" % (self.id)
@@ -259,7 +277,7 @@ def recvFromclientSocket(clientSocket):
         raise Exception('客户端断开连接')
     # 接收8个字节的头部.
     type, size = struct.unpack('ii', data)
-    print('type=%d , size%d' % (type, size))
+    print('type=%d , size=%d' % (type, size))
 
     # 接收后续的内容
     bodyData = clientSocket.recv(size)

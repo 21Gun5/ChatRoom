@@ -176,30 +176,30 @@ void CChatRoomClientDlg::OnClickedButtonRegister()
 	CString userName, passWord;
 
 	// 获取密码和用户框的内容
-	m_EditUserName.GetWindowTextW(userName);
-	m_EditPassWord.GetWindowTextW(passWord);
+	m_EditUserName.GetWindowText(userName);
+	m_EditPassWord.GetWindowText(passWord);
 
 	// CString转const char *
 	//const char * suserName = (LPCSTR)(LPCTSTR)userName;
 	//const char * spassWord = (LPCSTR)(LPCTSTR)passWord;//错误，只保留一个字符
-	size_t  i;
-	const wchar_t* wstr = (LPCTSTR)userName;
-	const wchar_t* wstr2 = (LPCTSTR)passWord;
-	char suserName[20] = { 0 };
-	char spassWord[20] = { 0 };
-	setlocale(LC_ALL, "chs");
-	wcstombs_s(&i, suserName, wstr, wcslen(wstr));
-	const char * ssuserName = suserName;//不加则插入数据库失败
-	const char * sspassWord = spassWord;
-	wcstombs_s(&i, spassWord, wstr2, wcslen(wstr2));
-	setlocale(LC_ALL, "C");
+	//size_t  i;
+	//const wchar_t* wstr = (LPCTSTR)userName;
+	//const wchar_t* wstr2 = (LPCTSTR)passWord;
+	//char suserName[20] = { 0 };
+	//char spassWord[20] = { 0 };
+	//setlocale(LC_ALL, "chs");
+	//wcstombs_s(&i, suserName, wstr, wcslen(wstr));
+	//const char * ssuserName = suserName;//不加则插入数据库失败
+	//const char * sspassWord = spassWord;
+	//wcstombs_s(&i, spassWord, wstr2, wcslen(wstr2));
+	//setlocale(LC_ALL, "C");
 
 	// 判断内容是否为空
 	if (userName.IsEmpty() || passWord.IsEmpty())
-		MessageBox(L"请输入用户名和密码");
+		MessageBox("请输入用户名和密码");
 	else
 	{
-		Register(&client,ssuserName,sspassWord);
+		Register(&client,userName,passWord);
 		//MessageBox(CString("注册成功 \n用户名: ") + userName+ "\n" + CString("密   码: ") + passWord);
 	}
 }
@@ -210,32 +210,32 @@ void CChatRoomClientDlg::OnClickedButtonLogin()
 	CString userName, passWord;
 
 	// 获取密码和用户框的内容
-	m_EditUserName.GetWindowTextW(userName);
-	m_EditPassWord.GetWindowTextW(passWord);
+	m_EditUserName.GetWindowText(userName);
+	m_EditPassWord.GetWindowText(passWord);
 
-	// CString转const char *
-	size_t  i;
-	const wchar_t* wstr = (LPCTSTR)userName;
-	const wchar_t* wstr2 = (LPCTSTR)passWord;
-	char suserName[20] = { 0 };
-	char spassWord[20] = { 0 };
-	setlocale(LC_ALL, "chs");
-	wcstombs_s(&i, suserName, wstr, wcslen(wstr));
-	const char * ssuserName = suserName;//不加则插入数据库失败
-	const char * sspassWord = spassWord;
-	wcstombs_s(&i, spassWord, wstr2, wcslen(wstr2));
-	setlocale(LC_ALL, "C");
+	//// CString转const char *
+	//size_t  i;
+	//const wchar_t* wstr = (LPCTSTR)userName;
+	//const wchar_t* wstr2 = (LPCTSTR)passWord;
+	//char suserName[20] = { 0 };
+	//char spassWord[20] = { 0 };
+	//setlocale(LC_ALL, "chs");
+	//wcstombs_s(&i, suserName, wstr, wcslen(wstr));
+	//const char * ssuserName = suserName;//不加则插入数据库失败
+	//const char * sspassWord = spassWord;
+	//wcstombs_s(&i, spassWord, wstr2, wcslen(wstr2));
+	//setlocale(LC_ALL, "C");
 
 	// 判断内容是否为空
 	if (userName.IsEmpty() || passWord.IsEmpty())
-		MessageBox(L"不可为空");
+		MessageBox("不可为空");
 	else
 	{
-		Login(&client,ssuserName,sspassWord);
+		Login(&client,userName,passWord);
 		Sleep(1000);// 等会儿另一个线程
 		if (g_isLogin)
 		{
-			g_CurAccount = ssuserName;// 设置当前用户
+			g_CurAccount = userName;// 设置当前用户
 
 			CChatDlg chatZoneDlg(this);
 			chatZoneDlg.DoModal();

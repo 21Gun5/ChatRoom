@@ -41,6 +41,7 @@ BEGIN_MESSAGE_MAP(CChatDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_SEND, &CChatDlg::OnClickedButtonSend)
 	ON_BN_CLICKED(IDC_BUTTON_CLEAN, &CChatDlg::OnClickedButtonClean)
 	ON_BN_CLICKED(IDC_BUTTON_ADDFRIEND, &CChatDlg::OnClickedButtonAddfriend)
+	ON_BN_CLICKED(IDC_BUTTON_RENEWLIST, &CChatDlg::OnClickedButtonRenewlist)
 END_MESSAGE_MAP()
 
 
@@ -68,8 +69,8 @@ BOOL CChatDlg::OnInitDialog()
 
 	// 好友列表初始化（设置风格、插入列
 	pFriendList->SetExtendedStyle(LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
-	pFriendList->InsertColumn(0, L"序号", LVCFMT_CENTER, 40);
-	pFriendList->InsertColumn(1, L"姓名", LVCFMT_CENTER, 80);
+	pFriendList->InsertColumn(0, "序号", LVCFMT_CENTER, 40);
+	pFriendList->InsertColumn(1, "姓名", LVCFMT_CENTER, 80);
 
 
 	// 搜索好友编辑框的默认值
@@ -120,37 +121,41 @@ void CChatDlg::OnClickedButtonSend()
 
 	// 获取发送的消息内容
 	CString message;
-	m_EditChatInput.GetWindowTextW(message);
+	m_EditChatInput.GetWindowText(message);
 	// 判断是否为空
 	if (message.IsEmpty())
-		MessageBox(L"什么都不写，你发nima呢");
+	{
+		MessageBox("什么都不写，你发nima呢");
+	}
+	// 不为空则发送
 	else
 	{
-		//MessageBox(CString("已发送: ") + message);
+		// 获取接收方并发送消息（好友&&选中状态）
+		for (int i = 0; i < m_ListFriendList.GetItemCount(); i++)// 遍历所有好友
+		{
+			// 如果是选中状态就发送
+			if (m_ListFriendList.GetCheck(i))
+			{
+				// 发送消息
+				//SendMultiMsg(g_pClient, message);//广播
+				CString sendToWho = m_ListFriendList.GetItemText(i, 1);
+				SendMsg(g_pClient, message, g_CurAccount, sendToWho);// 单播、多播
 
-		// cstring 转const char *
-		size_t  i;
-		const wchar_t* wstr = (LPCTSTR)message;
-		char smessage[20] = { 0 };
-		setlocale(LC_ALL, "chs");
-		wcstombs_s(&i, smessage, wstr, wcslen(wstr));
-		const char * ssmessage = smessage;//不加则插入数据库失败
-		setlocale(LC_ALL, "C");
-		// 发送消息
-		SendMsg(g_pClient, ssmessage);
+				// 新+旧+时间，再显示在聊天记录
+				CEdit*  pEditRecord = (CEdit*)GetDlgItem(IDC_EDIT_RECORD);
+				CString strTime = CTime::GetCurrentTime() .Format("%Y-%m-%d %X   ");
+				CString oldRecord;
+				pEditRecord->GetWindowText(oldRecord);
+				pEditRecord->SetWindowText(oldRecord + "\r\n"
+					+ strTime + "[Send]" + "\r\n"
+					+ ">  " + message 
+					+ " [to: " + sendToWho + "]");
+
+			}
+		}
 
 
-		// 显示在聊天记录
-		CEdit*  pEditRecord = (CEdit*)GetDlgItem(IDC_EDIT_RECORD);
-		// 获取时间
-		CString strTime; 
-		CString oldRecord;
-		CTime tm;
-		tm = CTime::GetCurrentTime();
-		strTime = tm.Format("%Y-%m-%d %X   ");
-		// 新旧内容结合后显示
-		pEditRecord->GetWindowText(oldRecord);
-		pEditRecord->SetWindowText(oldRecord +"\r\n"+ strTime + "Send:   " + message);
+
 
 	}
 		
@@ -175,29 +180,28 @@ void CChatDlg::OnClickedButtonAddfriend()
 
 	// 获取好友名字
 	CString friendName;
-	m_EditFriendName.GetWindowTextW(friendName);
+	m_EditFriendName.GetWindowText(friendName);
 
-	// CString转const char *
-	size_t  i;
-	const wchar_t* wstr = (LPCTSTR)friendName;
-	char sfriendName[20] = { 0 };
-	setlocale(LC_ALL, "chs");
-	wcstombs_s(&i, sfriendName, wstr, wcslen(wstr));
-	const char * ssfriendName = sfriendName;//不加则插入数据库失败
-	setlocale(LC_ALL, "C");
+	//// CString转const char *
+	//size_t  i;
+	//const wchar_t* wstr = (LPCTSTR)friendName;
+	//char sfriendName[20] = { 0 };
+	//setlocale(LC_ALL, "chs");
+	//wcstombs_s(&i, sfriendName, wstr, wcslen(wstr));
+	//const char * ssfriendName = sfriendName;//不加则插入数据库失败
+	//setlocale(LC_ALL, "C");
 
 	// 判断内容是否为空
 	if (friendName.IsEmpty())
-		MessageBox(L"不可为空");
+		MessageBox("不可为空");
 	else
 	{
-		AddFriend(g_pClient, ssfriendName);
+		AddFriend(g_pClient, friendName);
 	}
 }
 
-
-//void CChatDlg::OnClickedButtonGetfriendlist()
-//{
-//	// TODO: 在此添加控件通知处理程序代码
-//	GetFriendList(g_pClient);
-//}
+void CChatDlg::OnClickedButtonRenewlist()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	GetFriendList(g_pClient);
+}

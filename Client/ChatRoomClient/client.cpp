@@ -30,7 +30,7 @@ Client::Client(const char* serverIp, short port)
 	// 连接到服务端
 	connect(m_hSocket, (sockaddr*)&addr, sizeof(addr));
 }
-void Client::send(DataPackType type, const char* data, int size)
+void Client::send(DataPackType type, const char* data, uint32_t size)
 {
 	if (size == -1) {
 		size = strlen(data);
@@ -62,42 +62,48 @@ void Client::freeResult(DataPackResult* p) {
 void Login(Client* client, const char* pAccount, const char* password)
 {
 	CStringA buffer;
-	buffer.Format("%s\n%s", pAccount, password);
+	buffer.Format("%s\n%s", pAccount, password);//账号、密码
 	client->send(login, buffer, buffer.GetLength());
 }
 void Register(Client* client, const char* pAccount, const char* password)
 {
 	CStringA buffer;
-	buffer.Format("%s\n%s", pAccount, password);
-	client->send(registe,
-		buffer,
-		buffer.GetLength());
+	buffer.Format("%s\n%s", pAccount, password);//账号、密码
+	client->send(registe,buffer,buffer.GetLength());
 }
-void SendMsg(Client* pClient, const char* pMsg)
+void SendMultiMsg(Client* pClient, const char* pMsg)
 {
-	pClient->send(sendMultiMsg, pMsg);
+	// 基础版，只发消息
+	pClient->send(sendMultiMsg, pMsg);// 消息
+}
+void SendMsg(Client* pClient, const char* pMsg, CString fromWhere, CString toWhere)
+{
+	// 进阶版，发送消息、发送者、接收者
+	CStringA buffer;
+	buffer.Format("%s\n%s\n%s", pMsg, fromWhere, toWhere);//账号、密码
+	pClient->send(sendMsg, buffer, buffer.GetLength());
 }
 void AddFriend(Client* pClient, const char* pFriendName)
 {
 	CStringA buf;
-	buf.Format("%s\n0", pFriendName);
+	buf.Format("%s\n0", pFriendName);// 好友名字、0（表示添加好友）
 	pClient->send(addFriend, buf, buf.GetLength());
 }
 void AccpetAddFriend(Client* pClient, const char* pFriendName)
 {
 	CStringA buf;
-	buf.Format("%s\n1", pFriendName);
+	buf.Format("%s\n1", pFriendName);// 好友名字、1（表示同意添加）
 	pClient->send(addFriend, buf, buf.GetLength());
 }
 void RefuseAddFriend(Client* pClient, const char* pFriendName)
 {
 	CStringA buf;
-	buf.Format("%s\n2", pFriendName);
+	buf.Format("%s\n2", pFriendName);// 好友名字、2（表示拒绝添加）
 	pClient->send(addFriend, buf, buf.GetLength());
 }
 void GetFriendList(Client* pClient)
 {
-	pClient->send(getFriendList, "");
+	pClient->send(getFriendList, "");// 空
 }
 
 // 线程处理函数（接收消息
@@ -126,7 +132,7 @@ DWORD CALLBACK recvLoginProc(LPVOID arg)
 			sprintf_s(buff, "失败:%s\n", pResult->data);
 			tips = buff;
 
-			MessageBox(NULL, tips, L"提示", 0);
+			MessageBox(NULL, tips, "提示", 0);
 			continue;
 		}
 
@@ -135,14 +141,14 @@ DWORD CALLBACK recvLoginProc(LPVOID arg)
 		case login:
 		{
 			g_isLogin = true;
-			MessageBox(NULL, L"登录成功", L"提示", MB_OK);
+			MessageBox(NULL, "登录成功", "提示", MB_OK);
 			// 登录成功打开聊天框，此时登录框隐藏，关闭聊天框时再显示
 			AfxGetApp()->GetMainWnd()->ShowWindow(SW_HIDE);
 			break;
 		}
 		case registe:
 		{
-			MessageBox(NULL, L"注册成功", L"提示", MB_OK);
+			MessageBox(NULL, "注册成功", "提示", MB_OK);
 			break;
 		}
 
@@ -237,12 +243,12 @@ DWORD CALLBACK recvMessageProc(LPVOID arg)
 			sprintf_s(buff, "失败:%s\n", pResult->data);
 			tips = buff;
 
-			MessageBox(NULL, tips, L"提示", 0);
+			MessageBox(NULL, tips, "提示", 0);
 			continue;
 		}
 		switch (pResult->type)
 		{
-		case sendMultiMsg:// 发送消息
+		case sendMultiMsg:// 广播消息
 		{
 			//来自服务端通知
 			if (pResult->status == -1)
@@ -262,7 +268,9 @@ DWORD CALLBACK recvMessageProc(LPVOID arg)
 				strTime = tm.Format("%Y-%m-%d %X   ");
 				CString oldRecord;
 				pEditRecord->GetWindowText(oldRecord);
-				pEditRecord->SetWindowText(oldRecord + "\r\n" + strTime + "Recv:   " + g_recvMessage);
+				pEditRecord->SetWindowText(oldRecord + "\r\n" 
+					+ strTime + "[Recv From All]" +"\r\n" 
+					+ ">  "+ g_recvMessage);
 			}
 			else
 			{
@@ -271,6 +279,29 @@ DWORD CALLBACK recvMessageProc(LPVOID arg)
 			}
 			break;
 		}		
+		case sendMsg:// 单播消息
+		{
+			//来自服务端通知
+			if (pResult->status == -1)
+			{
+				// 提取消息
+				sprintf_s(g_recvMessage, "%s\n", pResult->data);
+				// 新+旧+时间，再显示在聊天记录框
+				CEdit * pEditRecord = g_pEditChatRecord;// 从全局变量获取控件句柄
+				CString strTime = CTime::GetCurrentTime().Format("%Y-%m-%d %X   ");
+				CString oldRecord;
+				pEditRecord->GetWindowText(oldRecord);
+				pEditRecord->SetWindowText(oldRecord + "\r\n"
+					+ strTime + "[Recv]" + "\r\n"
+					+ ">  " + g_recvMessage);
+			}
+			else
+			{
+				//服务端的回复
+				printf("\t消息发送成功\n");
+			}
+			break;
+		}
 		case addFriend:// 添加好友
 		{
 			// 如果状态码等于-1, 表示这是服务端主动向客户端发起的通知.
@@ -302,27 +333,27 @@ DWORD CALLBACK recvMessageProc(LPVOID arg)
 		{
 			//HWND hFriendList = GetDlgItem(g_hWndChat, IDC_EDIT_FINDFRIEND);
 			CListCtrl * pFriendList = g_pListFriendList;// 从全局变量获取控件句柄
-
+			// 先清空
+			pFriendList->DeleteAllItems();
 			// 切割好友列表
 			char* context;
 			char *p;
 			p = strtok_s(pResult->data, "\n", &context);// 用2将1分隔得3
 			int i = 1;
-
 			// 将其填充至好友列表
 			while (p != nullptr)
 			{
 				// int转LPCTSTR
-				CString str;
-				str.Format(_T("%d"), i);
-				LPCTSTR ii = str.AllocSysString();
-				// char * 转LPCTSTR
-				int num = MultiByteToWideChar(0, 0, p, -1, NULL, 0);
-				wchar_t *pp = new wchar_t[num];
-				MultiByteToWideChar(0, 0, p, -1, pp, num);
+				CString iStr;
+				iStr.Format("%d", i);
+				//LPCTSTR ii = str.AllocSysString();
+				//// char * 转LPCTSTR
+				//int num = MultiByteToWideChar(0, 0, p, -1, NULL, 0);
+				//wchar_t *pp = new wchar_t[num];
+				//MultiByteToWideChar(0, 0, p, -1, pp, num);
 				// 插入行、设置内容
-				pFriendList->InsertItem(0, ii);
-				pFriendList->SetItemText(0, 1, pp);
+				pFriendList->InsertItem(0, iStr);
+				pFriendList->SetItemText(0, 1, p);
 
 				i++;
 				p = strtok_s(nullptr, "\n", &context);
@@ -336,34 +367,6 @@ DWORD CALLBACK recvMessageProc(LPVOID arg)
 		}
 
 		}
-
-		//if (pResult->type == sendMultiMsg)
-		//{
-		//	 来自服务端通知
-		//	if (pResult->status == -1)
-		//	{
-		//		CString tips;
-		//		sprintf_s(g_recvMessage, "%s\n", pResult->data);
-		//		tips = g_recvMessage;
-		//		MessageBox(NULL, tips, L"提示", 0);
-		//		 将收到的消息显示到聊天记录框
-		//		CEdit * pEditRecord = (CEdit*)GetDlgItem(g_hpWndChat,IDC_EDIT_RECORD);//出错，将控件句柄设置全局
-		//		CEdit * pEditRecord = g_hpEditChatRecord;// 从全局变量获取控件句柄
-		//		获取系统时间 
-		//		CString strTime;
-		//		CTime tm;
-		//		tm = CTime::GetCurrentTime();
-		//		strTime = tm.Format("%Y-%m-%d %X   ");
-		//		CString oldRecord;
-		//		pEditRecord->GetWindowText(oldRecord);
-		//		pEditRecord->SetWindowText(oldRecord + "\r\n" + strTime + "Recv:   " + g_recvMessage);
-		//	}
-		//	else
-		//	{
-		//		 服务端的回复
-		//		printf("\t消息发送成功\n");
-		//	}
-		//}
 	}
 	return 0;
 }

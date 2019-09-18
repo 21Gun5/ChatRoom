@@ -25,20 +25,12 @@ public:
 	CEdit m_EditChatRecord;
 	CEdit m_EditCurrentAccount;
 	CEdit m_EditFriendName;
+	CListCtrl m_ListFriendList;
 
 	virtual BOOL OnInitDialog();
 	afx_msg void OnClose();
 	afx_msg void OnClickedButtonSend();
 	afx_msg void OnClickedButtonClean();
-
-//	afx_msg void OnUpdateEditChat();
-//	afx_msg void OnTimer(UINT_PTR nIDEvent);
-//	int RecvMessage(LPVOID arg);
-//	CString m_currentAccount;
-
-	
 	afx_msg void OnClickedButtonAddfriend();
-//	afx_msg void OnClickedButtonGetfriendlist();
-
-	CListCtrl m_ListFriendList;
+	afx_msg void OnClickedButtonRenewlist();
 };

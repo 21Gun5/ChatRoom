@@ -23,7 +23,8 @@
 #define IDC_STATIC_CURUSER              1012
 #define IDC_EDIT_CURUSR                 1013
 #define IDC_EDIT_RECORD                 1014
-#define IDC_BUTTON_GETFRIENDLIST        1016
+#define IDC_BUTTON2                     1017
+#define IDC_BUTTON_RENEWLIST            1017
 
 // Next default values for new objects
 // 
@@ -31,7 +32,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        132
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1017
+#define _APS_NEXT_CONTROL_VALUE         1018
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
