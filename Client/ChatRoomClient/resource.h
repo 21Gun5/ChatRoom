@@ -12,19 +12,22 @@
 #define IDC_EDIT_PWD                    1001
 #define IDC_BUTTON_LOGIN                1002
 #define IDC_BUTTON_REGISTER             1003
-#define IDC_LIST2                       1005
 #define IDC_LIST_FRIENDLIST             1005
 #define IDC_EDIT_CHAT                   1006
 #define IDC_BUTTON_SEND                 1007
 #define IDC_BUTTON_CLEAN                1008
-#define IDC_EDIT_FINDFRIEND             1010
-#define IDC_BUTTON3                     1011
+#define IDC_LIST_ROOMLIST               1009
+#define IDC_EDIT_ADDFRIEND              1010
 #define IDC_BUTTON_ADDFRIEND            1011
 #define IDC_STATIC_CURUSER              1012
 #define IDC_EDIT_CURUSR                 1013
 #define IDC_EDIT_RECORD                 1014
-#define IDC_BUTTON2                     1017
-#define IDC_BUTTON_RENEWLIST            1017
+#define IDC_EDIT_JOINROOM               1015
+#define IDC_BUTTON_JOINROOM             1016
+#define IDC_BUTTON_F5FRIENDLIST         1017
+#define IDC_BUTTON_F5ROOMLIST           1018
+#define IDC_EDIT_CREATEROOM             1019
+#define IDC_BUTTON_CREATEROOM           1020
 
 // Next default values for new objects
 // 

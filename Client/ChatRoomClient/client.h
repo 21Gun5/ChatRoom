@@ -20,6 +20,7 @@ extern char g_recvMessage[200];
 extern HWND  g_hWndChat;
 extern CEdit * g_pEditChatRecord;
 extern CListCtrl * g_pListFriendList;
+extern CListCtrl * g_pListRoomList;
 // 数据包类型
 enum DataPackType {
 	login = 1,//登录类型
@@ -27,7 +28,11 @@ enum DataPackType {
 	sendMultiMsg = 3,// 广播
 	sendMsg = 4,//单播
 	addFriend = 5,// 加好友
-	getFriendList = 6//获取好友列表
+	getFriendList = 6,//获取好友列表
+	createRoom = 7,// 创建房间
+	joinRoom = 8,//加入房间
+	getroomlist = 9,//获取房间列表
+	getroommember = 10//得到群成员
 };
 // 网络数据的结构
 #pragma pack(push,1)
@@ -59,15 +64,25 @@ public:
 	DataPackResult* recv();
 	void freeResult(DataPackResult* p);
 };
-// 功能函数
+// 注册登录
 void Login(Client* client,const char* pAccount,const char* password);
 void Register(Client* client,const char* pAccount,const char* password);
+// 发消息
 void SendMultiMsg(Client* pClient, const char* pMsg);
 void SendMsg(Client* pClient, const char* pMsg, CString fromWhere, CString toWhere);
+//void SendRoomMsg(Client* pClient, const char*roomName, const char* pMsg);
+void SendRoomMsg(Client* pClient, const char* pMsg, CString fromWhere, CString toWhere);
+// 好友相关
 void AddFriend(Client* pClient, const char* pFriendName);
 void AccpetAddFriend(Client* pClient, const char* pFriendName);
 void RefuseAddFriend(Client* pClient, const char* pFriendName);
 void GetFriendList(Client* pClient);
+// 聊天室相关
+void CreateRoom(Client* pClient, const char* roomName);
+void JoinRoom(Client* pClient, const char* roomName);
+void GetRoomList(Client* pClient);
+void GetRoomMembers(Client* pClient, const char* roomName);
+
 // 回调函数（接收消息）
 DWORD CALLBACK recvLoginProc(LPVOID arg);
 DWORD CALLBACK recvMessageProc(LPVOID arg);

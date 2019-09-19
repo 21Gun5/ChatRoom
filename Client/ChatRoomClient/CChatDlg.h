@@ -24,7 +24,7 @@ public:
 	CEdit m_EditChatInput;
 	CEdit m_EditChatRecord;
 	CEdit m_EditCurrentAccount;
-	CEdit m_EditFriendName;
+	CEdit m_EditAddFriend;
 	CListCtrl m_ListFriendList;
 
 	virtual BOOL OnInitDialog();
@@ -32,5 +32,11 @@ public:
 	afx_msg void OnClickedButtonSend();
 	afx_msg void OnClickedButtonClean();
 	afx_msg void OnClickedButtonAddfriend();
-	afx_msg void OnClickedButtonRenewlist();
+	afx_msg void OnClickedButtonF5friendlist();
+	CEdit m_EditCreateRoom;
+	afx_msg void OnClickedButtonCreateroom();
+	CEdit m_EditJoinRoom;
+	afx_msg void OnClickedButtonJoinroom();
+	CListCtrl m_ListRoomList;
+	afx_msg void OnClickedButtonF5roomlist();
 };

@@ -27,12 +27,15 @@ CChatDlg::~CChatDlg()
 void CChatDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_EDIT_FINDFRIEND, m_EditFriendName);
+	DDX_Control(pDX, IDC_EDIT_ADDFRIEND, m_EditAddFriend);
 	//  DDX_Text(pDX, IDC_STATIC_CURUSER, m_currentAccount);
 	DDX_Control(pDX, IDC_EDIT_CHAT, m_EditChatInput);
 	DDX_Control(pDX, IDC_EDIT_RECORD, m_EditChatRecord);
 	DDX_Control(pDX, IDC_EDIT_CURUSR, m_EditCurrentAccount);
 	DDX_Control(pDX, IDC_LIST_FRIENDLIST, m_ListFriendList);
+	DDX_Control(pDX, IDC_EDIT_CREATEROOM, m_EditCreateRoom);
+	DDX_Control(pDX, IDC_EDIT_JOINROOM, m_EditJoinRoom);
+	DDX_Control(pDX, IDC_LIST_ROOMLIST, m_ListRoomList);
 }
 
 
@@ -41,7 +44,10 @@ BEGIN_MESSAGE_MAP(CChatDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_SEND, &CChatDlg::OnClickedButtonSend)
 	ON_BN_CLICKED(IDC_BUTTON_CLEAN, &CChatDlg::OnClickedButtonClean)
 	ON_BN_CLICKED(IDC_BUTTON_ADDFRIEND, &CChatDlg::OnClickedButtonAddfriend)
-	ON_BN_CLICKED(IDC_BUTTON_RENEWLIST, &CChatDlg::OnClickedButtonRenewlist)
+	ON_BN_CLICKED(IDC_BUTTON_F5FRIENDLIST, &CChatDlg::OnClickedButtonF5friendlist)
+	ON_BN_CLICKED(IDC_BUTTON_CREATEROOM, &CChatDlg::OnClickedButtonCreateroom)
+	ON_BN_CLICKED(IDC_BUTTON_JOINROOM, &CChatDlg::OnClickedButtonJoinroom)
+	ON_BN_CLICKED(IDC_BUTTON_F5ROOMLIST, &CChatDlg::OnClickedButtonF5roomlist)
 END_MESSAGE_MAP()
 
 
@@ -57,25 +63,28 @@ BOOL CChatDlg::OnInitDialog()
 
 	// TODO:  在此添加额外的初始化
 
-	// 获取本窗口句柄
-	g_hWndChat = this->m_hWnd;
-
-	// 获取聊天记录框的控件句柄
-	g_pEditChatRecord = (CEdit*)GetDlgItem(IDC_EDIT_RECORD);
-
-	//获取好友列表的列表控件句柄
-	CListCtrl *pFriendList = (CListCtrl *)GetDlgItem(IDC_LIST_FRIENDLIST);
-	g_pListFriendList = pFriendList;
+	// 设置全局变量
+	g_hWndChat = this->m_hWnd;//本窗口句柄
+	g_pEditChatRecord = (CEdit*)GetDlgItem(IDC_EDIT_RECORD);//聊天记录框的控件句柄
+	g_pListFriendList = (CListCtrl *)GetDlgItem(IDC_LIST_FRIENDLIST);//好友列表的列表控件句柄
+	g_pListRoomList = (CListCtrl *)GetDlgItem(IDC_LIST_ROOMLIST);//群列表的列表控件句柄
 
 	// 好友列表初始化（设置风格、插入列
-	pFriendList->SetExtendedStyle(LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
-	pFriendList->InsertColumn(0, "序号", LVCFMT_CENTER, 40);
-	pFriendList->InsertColumn(1, "姓名", LVCFMT_CENTER, 80);
+	g_pListFriendList->SetExtendedStyle(LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
+	g_pListFriendList->InsertColumn(0, "序号", LVCFMT_CENTER, 40);
+	g_pListFriendList->InsertColumn(1, "姓名", LVCFMT_CENTER, 80);
+	// 群列表初始化
+	g_pListRoomList->SetExtendedStyle(LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
+	g_pListRoomList->InsertColumn(0, "序号", LVCFMT_CENTER, 40);
+	g_pListRoomList->InsertColumn(1, "群名", LVCFMT_CENTER, 80);
 
-
-	// 搜索好友编辑框的默认值
-	CEdit*  pEditFindFri = (CEdit*)GetDlgItem(IDC_EDIT_FINDFRIEND);//获取相应的编辑框ID
-	pEditFindFri->SetWindowText(_T("请输入好友姓名")); //设置默认显示的内容 
+	// 设置编辑框的默认值
+	CEdit*  pEditAddFriend = (CEdit*)GetDlgItem(IDC_EDIT_ADDFRIEND);
+	pEditAddFriend->SetWindowText(_T("请输入好友姓名"));
+	CEdit*  pEditCreateRoom = (CEdit*)GetDlgItem(IDC_EDIT_CREATEROOM);
+	pEditCreateRoom->SetWindowText(_T("请输入群名称"));
+	CEdit*  pEditJoinRoom = (CEdit*)GetDlgItem(IDC_EDIT_JOINROOM);
+	pEditJoinRoom->SetWindowText(_T("请输入群名称"));
 
 	// 新开一个线程，接收消息
 	CreateThread(0, 0, recvMessageProc, &g_pClient, 0, 0);
@@ -84,16 +93,9 @@ BOOL CChatDlg::OnInitDialog()
 	CEdit*  pEditCurUsr = (CEdit*)GetDlgItem(IDC_EDIT_CURUSR);//获取相应的编辑框ID
 	pEditCurUsr->SetWindowText(g_CurAccount);
 
-	/*UpdateData(TRUE);
-	char buff[30];
-	sprintf_s(buff, " %s", g_CurAccount);
-	m_currentAccount = buff;
-	UpdateData(FALSE);
-	*/
-
-
-	// 获取好友列表
+	// 获取好友列表、群列表
 	GetFriendList(g_pClient);
+	GetRoomList(g_pClient);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 异常: OCX 属性页应返回 FALSE
@@ -130,7 +132,7 @@ void CChatDlg::OnClickedButtonSend()
 	// 不为空则发送
 	else
 	{
-		// 获取接收方并发送消息（好友&&选中状态）
+		// 获取接收好友并发送消息（好友&&选中状态）
 		for (int i = 0; i < m_ListFriendList.GetItemCount(); i++)// 遍历所有好友
 		{
 			// 如果是选中状态就发送
@@ -154,14 +156,34 @@ void CChatDlg::OnClickedButtonSend()
 			}
 		}
 
+		// 获取接收群并发送消息
+		for (int i = 0; i < m_ListRoomList.GetItemCount(); i++)// 遍历所有群
+		{
+			// 如果是选中状态就发送
+			if (m_ListRoomList.GetCheck(i))
+			{
+				// 发送消息
+				//SendMultiMsg(g_pClient, message);//广播
+				CString sendToWho = m_ListRoomList.GetItemText(i, 1);
+				SendRoomMsg(g_pClient, message, g_CurAccount, sendToWho);// 单播、多播
 
+				// 新+旧+时间，再显示在聊天记录
+				CEdit*  pEditRecord = (CEdit*)GetDlgItem(IDC_EDIT_RECORD);
+				CString strTime = CTime::GetCurrentTime().Format("%Y-%m-%d %X   ");
+				CString oldRecord;
+				pEditRecord->GetWindowText(oldRecord);
+				pEditRecord->SetWindowText(oldRecord + "\r\n"
+					+ strTime + "[Send]" + "\r\n"
+					+ ">  " + message
+					+ " [to: " + sendToWho + "]");
+
+			}
+		}
 
 
 	}
 		
 }
-
-
 void CChatDlg::OnClickedButtonClean()
 {
 	// TODO: 在此添加控件通知处理程序代码
@@ -171,37 +193,56 @@ void CChatDlg::OnClickedButtonClean()
 	pEdit->SetWindowText(_T("")); //设置默认显示的内容 
 
 }
-
-
-
 void CChatDlg::OnClickedButtonAddfriend()
 {
 	// TODO: 在此添加控件通知处理程序代码
 
 	// 获取好友名字
 	CString friendName;
-	m_EditFriendName.GetWindowText(friendName);
-
-	//// CString转const char *
-	//size_t  i;
-	//const wchar_t* wstr = (LPCTSTR)friendName;
-	//char sfriendName[20] = { 0 };
-	//setlocale(LC_ALL, "chs");
-	//wcstombs_s(&i, sfriendName, wstr, wcslen(wstr));
-	//const char * ssfriendName = sfriendName;//不加则插入数据库失败
-	//setlocale(LC_ALL, "C");
-
+	m_EditAddFriend.GetWindowText(friendName);
 	// 判断内容是否为空
 	if (friendName.IsEmpty())
 		MessageBox("不可为空");
 	else
-	{
 		AddFriend(g_pClient, friendName);
-	}
 }
-
-void CChatDlg::OnClickedButtonRenewlist()
+void CChatDlg::OnClickedButtonF5friendlist()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	GetFriendList(g_pClient);
+}
+void CChatDlg::OnClickedButtonCreateroom()
+{
+	// TODO: 在此添加控件通知处理程序代码
+
+	// 获取群名字
+	CString roomName;
+	m_EditCreateRoom.GetWindowText(roomName);
+	// 判断内容是否为空
+	if (roomName.IsEmpty())
+		MessageBox("不可为空");
+	else
+		CreateRoom(g_pClient, roomName);
+}
+
+
+void CChatDlg::OnClickedButtonJoinroom()
+{
+	// TODO: 在此添加控件通知处理程序代码
+
+	// 获取群名字
+	CString roomName;
+	m_EditJoinRoom.GetWindowText(roomName);
+	// 判断内容是否为空
+	if (roomName.IsEmpty())
+		MessageBox("不可为空");
+	else
+		JoinRoom(g_pClient, roomName);
+}
+
+
+void CChatDlg::OnClickedButtonF5roomlist()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	GetRoomList(g_pClient);
 }

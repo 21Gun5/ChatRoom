@@ -5,10 +5,9 @@ import struct
 import threading
 import base64
 from enum import Enum
-
 import pymysql
 
-
+# 定义类
 class Database:
     def __init__(self):
         self.connecter = pymysql.connect(host='127.0.0.1',
@@ -18,12 +17,6 @@ class Database:
                                          charset='utf8',
                                          cursorclass=pymysql.cursors.DictCursor)
         self.cursor = self.connecter.cursor(cursor=pymysql.cursors.DictCursor)
-
-
-# 构造一个全局的数据库对象
-_db = Database()
-
-
 class Request(Enum):
     # 登陆请求
     # 客户端 -> 服务端, 参数: 账号\n密码
@@ -50,7 +43,23 @@ class Request(Enum):
     # 服务端 -> 客户端, 参数: 好友1账号\n好友2账号\n好友n账号
     getFriendList = 6
 
+    # 创建群
+    # 客户端 -> 服务端, 参数: 群的名称
+    createroom = 7
 
+    # 加入群
+    # 客户端 -> 服务端, 参数: 群的名称
+    joincroom = 8
+
+    # 获取所加入的所有群的列表
+    # 客户端 -> 服务端, 参数: 无
+    # 服务端 -> 客户端, 返回内容: 群1名称\n群2名称\n群n名称
+    getroomlist = 9
+
+    # 获取群内成员列表
+    # 客户端 -> 服务端, 参数: 群的名称
+    # 服务端 -> 客户端, 返回内容: 用户1名称\n用户2名称\n用户n名称
+    getroommember = 10
 class ResultCode(Enum):
     notify = -1  # 表示消息是由服务端主动发起的通知
     success = 0  # 处理成功
@@ -58,14 +67,6 @@ class ResultCode(Enum):
     user_exist = 2  # 用户已存在
     user_non_exist = 3  # 用户不存在
     password_wrong = 4  # 密码错误
-
-
-def md5(s):
-    hashObj = hashlib.md5()
-    hashObj.update(s.encode('gb2312'))
-    return hashObj.hexdigest()
-
-
 class Handler():
     # 客户端请求的处理类
     def __init__(self):
@@ -73,7 +74,7 @@ class Handler():
         self.socket = None
         self.account = ''
         self.id = 0
-
+    # 登录注册
     def register(self):
         # 注册
         print('注册 参数: ', self.args)
@@ -104,7 +105,6 @@ class Handler():
                            Request.register.value,
                            ResultCode.success.value,
                            "注册成功")
-
     def login(self):
         print('登陆 参数: ', self.args)
         # 1. 查表,判断用户是否存在
@@ -137,7 +137,7 @@ class Handler():
         # self.user = userInfo
         self.__dict__.update(userInfo)
         _clientDict[self.account] = self
-
+    # 发消息
     def sendMultiMsg(self):
         print('广播消息 参数: ', self.args)
         msg = self.args[0]
@@ -148,7 +148,6 @@ class Handler():
                                Request.sendMultiMsg.value,
                                ResultCode.notify.value,
                                msg)
-
     def sendMsg(self):
         print('单播消息 参数: ', self.args)
         msg = self.args[0]
@@ -164,8 +163,7 @@ class Handler():
                                Request.sendMsg.value,
                                ResultCode.notify.value,
                                msg + ' [from: '+ recvFrom+']')
-
-
+    # 好友相关
     def addFriend(self):
         print('加好友 参数: ', self.args)
         print('添加好友请求, self = ', self.account)
@@ -242,7 +240,6 @@ class Handler():
         elif self.args[1] == '2':
             # 拒绝添加好友,可以通知对方,好友请求已经被拒绝了
             pass
-
     def getFriendList(self):
         print('获取好友列表 参数: ', self.args)
         # 查询数据库得到所有好友
@@ -262,55 +259,123 @@ class Handler():
                            Request.getFriendList.value,
                            ResultCode.success.value,
                            fList)
+    # 聊天室相关
+    def createroom(self):
+        # 创建群
+        # 客户端 -> 服务端, 参数: 群的名称
+        print('创建群 参数: ', self.args)
+        roomName = self.args[0]
+        # 1. 检查群是否已经创建
+        sql = "select * from chatroom_room where account='%s';"%(roomName)
+        _db.cursor.execute(sql)
+        room = _db.cursor.fetchone()
+        if room :# 群存在了
+            sendToclientSocket(self.socket,
+                               Request.createroom.value,
+                               ResultCode.room_exist.value,
+                               "群已经存在")
+            return
+        # 2. 创建一个新的
+        sql = "insert into chatroom_room (account) VALUES('%s');"%(roomName)
+        _db.cursor.execute(sql)
+        _db.cursor.execute('commit;')
+        # 3. 将自己自动加入到新群中,并将身份设置为群主
+        # 3.1 获取群在数据表中的id
+        sql = "select * from chatroom_room where account='%s';" % (roomName)
+        _db.cursor.execute(sql)
+        room = _db.cursor.fetchone()
+        sql = "insert into chatroom_roommember (id_user, id_room,user_status) " \
+              " VALUES(%d,%d,0)"%(self.id , room['id'])
+        _db.cursor.execute(sql)
+        _db.cursor.execute('commit;')
+        # 4. 返回成功
+        sendToclientSocket(self.socket,
+                           Request.createroom.value,
+                           ResultCode.success.value,
+                           "")
 
+    # 加入群
+    # 客户端 -> 服务端, 参数: 群的名称
+    def joincroom(self):
+        print('加入群 参数: ', self.args)
+        roomName = self.args[0]
+        # 1. 判断群是否已存在
+        sql = "select * from chatroom_room where account='%s';" % (roomName)
+        _db.cursor.execute(sql)
+        room = _db.cursor.fetchone()
+        if not room:  # 群存在了
+            sendToclientSocket(self.socket,
+                               Request.joincroom.value,
+                               ResultCode.room_exist.value,
+                               "不存在这个群")
+            return
+        # 2. 是否已经加入过
+        sql ="select * from chatroom_roommember where " \
+             "id_room=%d and id_user=%d;"%(room['id'],self.id)
+        _db.cursor.execute(sql)
+        if _db.cursor.fetchone() :
+            sendToclientSocket(self.socket,
+                               Request.joincroom.value,
+                               ResultCode.success.value,
+                               "")
+            return
+        # 3. 可以找到群的创建者,将消息发送创建者让他决定是否允许别人加入到这个群
+        # 4. 这里直接无条件加入
+        sql = "insert into chatroom_roommember (id_user, id_room, user_status) " \
+              "VALUES (%d,%d,2)"%(self.id,room['id'])
+        _db.cursor.execute(sql)
+        _db.cursor.execute('commit;')
+        sendToclientSocket(self.socket,
+                           Request.joincroom.value,
+                           ResultCode.success.value,
+                           "")
 
-def sendToclientSocket(clientSocket, type, status, strData):
-    data = strData.encode('gb2312')
-    # 发之间先加密（加密盒子里的数据，而不是盒子本身）
-    data = base64.b64encode(data)
-    size = len(data)
-    strFormat = 'iii%ds' % (size)
-    rawData = struct.pack(strFormat, type, status, size, data)
+    # 获取所加入的所有群的列表
+    # 客户端 -> 服务端, 参数: 无
+    # 服务端 -> 客户端, 返回内容: 群1名称\n群2名称\n群n名称
+    def getroomlist(self):
+        print('获取群列表 参数: ', self.args)
+        sql = "select * from chatroom_room where id in( " \
+              " select id_room from chatroom_roommember where id_user=%d);"%(self.id)
+        _db.cursor.execute(sql)
+        all = _db.cursor.fetchall()
+        roomNameList = []
+        for r in all:
+            roomNameList.append(r['account'])
 
-    clientSocket.send(rawData)
+        naems =  '\n'.join(roomNameList)
+        sendToclientSocket(self.socket,
+                           Request.getroomlist.value,
+                           ResultCode.success.value,
+                           naems)
 
-# def decode2(str):
-# 	for i in range(len(str)):
-# 		i ^= 6
-# 	return str
-
-def recvFromclientSocket(clientSocket):
-    data = clientSocket.recv(8)
-
-
-    # 接收后先解密
-    # data1 = base64.b64decode(data).decode("gb2312")# here
-    # data2 = base64.b64decode(data).decode("utf-8")  # here
-    # data3 = base64.b64decode(data).decode() # here
-    # data4 = base64.b64decode(data)  # here
-    # data1 = decode2(data)  # here
-    # data2 = data1.decode("gb2312")
-
-    if len(data) == 0:
-        raise Exception('客户端断开连接')
-    # 接收8个字节的头部.
-    type, size = struct.unpack('ii', data)
-    print('type=%d , size=%d' % (type, size))
-
-    # 接收后续的内容
-    bodyData = clientSocket.recv(size)
-
-    # 接收后先解密
-    bodyData = base64.b64decode(bodyData)# here
-    # bodyData2 = base64.b64decode(bodyData.decode('gb2312'))  # here
-    # bodyData= decode2(bodyData)
-
-    print('bodyData: %s' % (bodyData.decode('gb2312')))
-    # 解码之后分割参数
-    return type, bodyData.decode('gb2312').split('\n')
-
-
-_clientDict = {}
+    # 获取群内成员列表
+    # 客户端 -> 服务端, 参数: 群的名称
+    # 服务端 -> 客户端, 返回内容: 用户1名称\n用户2名称\n用户n名称
+    def getroommember(self):
+        print('获取群成员 参数: ', self.args)
+        roomName = self.args[0]
+        sql = "select * from chatroom_room where account='%s';"%(roomName)
+        _db.cursor.execute(sql)
+        room= _db.cursor.fetchone()
+        if not room:
+            sendToclientSocket(self.socket,
+                               Request.getroommember.value,
+                               ResultCode.room_exist.value,
+                               "此群不存在")
+            return
+        sql = "select * from chatroom_user where id in(" \
+              "select id_user from chatroom_roommember where id_room=%d);"%(room['id'])
+        _db.cursor.execute(sql)
+        all = _db.cursor.fetchall()
+        friendList=[]
+        for f in all:
+            friendList.append(f['account'])
+        naems = '\n'.join(friendList)
+        sendToclientSocket(self.socket,
+                           Request.getroommember.value,
+                           ResultCode.success.value,
+                           naems)
 
 
 class Server:
@@ -362,6 +427,42 @@ class Server:
                 args=(h,)
             ).start()
 
+# 全局变量
+_db = Database()# 构造一个全局的数据库对象
+_clientDict = {}# 保存在线用户
+
+# 函数定义
+def md5(s):
+    hashObj = hashlib.md5()
+    hashObj.update(s.encode('gb2312'))
+    return hashObj.hexdigest()
+def sendToclientSocket(clientSocket, type, status, strData):
+    data = strData.encode('gb2312')
+    # 发之间先加密（加密盒子里的数据，而不是盒子本身）
+    data = base64.b64encode(data)#here
+    size = len(data)
+    strFormat = 'iii%ds' % (size)
+    rawData = struct.pack(strFormat, type, status, size, data)
+
+    clientSocket.send(rawData)
+def recvFromclientSocket(clientSocket):
+    data = clientSocket.recv(8)
+
+    if len(data) == 0:
+        raise Exception('客户端断开连接')
+    # 接收8个字节的头部.
+    type, size = struct.unpack('ii', data)
+    print('type=%d , size=%d' % (type, size))
+
+    # 接收后续的内容
+    bodyData = clientSocket.recv(size)
+
+    # 接收后先解密
+    bodyData = base64.b64decode(bodyData)# here
+
+    print('bodyData: %s' % (bodyData.decode('gb2312')))
+    # 解码之后分割参数
+    return type, bodyData.decode('gb2312').split('\n')
 
 
 if __name__ == '__main__':

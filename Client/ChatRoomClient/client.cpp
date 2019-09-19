@@ -16,6 +16,7 @@ char g_recvMessage[200] = { 0 };// 接收到的消息
 HWND g_hWndChat = NULL;
 CEdit * g_pEditChatRecord = NULL;
 CListCtrl * g_pListFriendList= NULL;
+CListCtrl * g_pListRoomList = NULL;
 
 // 类的成员函数
 Client::Client(const char* serverIp, short port)
@@ -33,28 +34,6 @@ Client::Client(const char* serverIp, short port)
 }
 void Client::send(DataPackType type, const char* data, uint32_t size)
 {
-
-
-	//// base64加密
-	//std::string tmp = (char*)&dp;
-	//std::string dpEncode = base64_encode(reinterpret_cast<const unsigned char*>(tmp.c_str()), tmp.length());
-	//::send(m_hSocket, dpEncode.c_str(), sizeof(dp), 0);
-	//MessageBox(NULL, dpEncode.c_str(), NULL,0);
-	// 异或加密
-	//std::string buff = (char*)&dp;
-	//::send(m_hSocket, encode(buff), sizeof(dp), 0);
-
-	// 不加密
-	//::send(m_hSocket, (char*)&dp, sizeof(dp), 0);
-	
-	//if (size == -1)
-	//{
-	//	//size = strlen(data);
-	//	size = sizeof(dataEncode);
-	//}
-
-
-
 	// base64加密
 	std::string tmp = data;
 	std::string dataEncode = base64_encode(reinterpret_cast<const unsigned char*>(tmp.c_str()), tmp.length());
@@ -64,99 +43,48 @@ void Client::send(DataPackType type, const char* data, uint32_t size)
 
 	::send(m_hSocket, (char*)&dp, sizeof(dp), 0);
 	::send(m_hSocket, dataEncode.c_str(), sizeof(dataEncode), 0);
-	// 不加密
-	//::send(m_hSocket, data, size, 0);
-	// 异或加密
-	//std::string buff2 = data;
-	//::send(m_hSocket, encode(buff2), size, 0);
 
 }
 DataPackResult* Client::recv()
 {
-	DataPackResult head = { 0 };
-	//// 收到后先解密
-	//int recvSize = ::recv(m_hSocket,(char*)&head, sizeof(head) - 1, 0);
-	//std::string base64Str = (char*)&head;
-	//std::string headDecode = base64_decode(base64Str);
-	//if (recvSize != sizeof(headDecode) - 1)
+	//DataPackResult head = { 0 };
+	//if (::recv(m_hSocket, (char*)&head, sizeof(head) - 1, 0) != sizeof(head) - 1)
 	//{
 	//	return NULL;
 	//}
 
-	if (::recv(m_hSocket, (char*)&head, sizeof(head) - 1, 0) != sizeof(head) - 1)
-	{
-		return NULL;
-	}
+	//DataPackResult* pBuff = (DataPackResult*)malloc(sizeof(DataPackResult) + head.size);
+	//memset(pBuff, 0, head.size + sizeof(DataPackResult));
+	//memcpy(pBuff, &head, sizeof(head));
 
-	DataPackResult* pBuff = (DataPackResult*)malloc(sizeof(DataPackResult) + head.size);
-	memset(pBuff, 0, head.size + sizeof(DataPackResult));
-	memcpy(pBuff, &head, sizeof(head));
-
-	//// 收到后先解密
-	//int recvSize = ::recv(m_hSocket, pBuff->data, sizeof(head) - 1, 0);
-	//std::string base64Str; //中间变量
-	//// pBuff->data
-	//base64Str = pBuff->data;
-	//std::string pBuffDataDecode = base64_decode(base64Str);
-	//if (recvSize != pBuff->size)
+	//if (::recv(m_hSocket, pBuff->data, pBuff->size, 0) != pBuff->size) 
 	//{
 	//	free(pBuff);
 	//	return NULL;
 	//}
+	//return (DataPackResult*)pBuff;
 
-	if (::recv(m_hSocket, pBuff->data, pBuff->size, 0) != pBuff->size) 
-	{
+	DataPackResult head = { 0 };
+	if (::recv(m_hSocket, (char*)&head, sizeof(head) - 1, 0) != sizeof(head) - 1) {
+		return NULL;
+	}
+	DataPackResult* pBuff = (DataPackResult*)malloc(sizeof(DataPackResult) + head.size);
+	memset(pBuff, 0, head.size + sizeof(DataPackResult));
+	memcpy(pBuff, &head, sizeof(head));
+	if (::recv(m_hSocket, pBuff->data, pBuff->size, 0) != pBuff->size) {
 		free(pBuff);
 		return NULL;
 	}
+	// 		for (int i = 0; i < pBuff->size; ++i) {
+	// 			pBuff->data[i] ^= 0x15;
+	// 		}
 	return (DataPackResult*)pBuff;
 }
-//DataPackResult* Client::recv()
-//{
-//	DataPackResult head = { 0 };
-//	
-//	// 收到后先解密
-//	DataPackResult * phead = &head;
-//	int recvSize = ::recv(m_hSocket, (char*)phead, sizeof(head) - 1, 0);
-//
-//	std::string tmp = (char*)phead;
-//	std::string pheadDecode = base64_decode(tmp);
-//	head = (DataPackResult )*pheadDecode.c_str();
-//	//head = *headDecode.c_str();
-//	//phead = *ppheadDecode;
-//	//memcpy(head, &headDecode, sizeof(headDecode));
-//	if (recvSize != sizeof(head) - 1)
-//	{
-//		return NULL;
-//	}
-//	/*if (::recv(m_hsocket, (char*)&head, sizeof(head) - 1, 0) != sizeof(head) - 1)
-//	{
-//		return null;
-//	}*/
-//
-//	DataPackResult* pBuff = (DataPackResult*)malloc(sizeof(DataPackResult) + head.size);
-//	memset(pBuff, 0, head.size + sizeof(DataPackResult));
-//	memcpy(pBuff, &head, sizeof(head));
-//
-//	// 收到后先解密
-//	//char * ppBuffDate = &( pBuff->data);
-//	char * buff=NULL;
-//	int recvSize2 = ::recv(m_hSocket, buff, sizeof(head) - 1, 0);
-//	std::string base64Str = buff;
-//	std::string pBuffDataDecode = base64_decode(base64Str);
-//	memcpy(pBuff->data, &buff, sizeof(buff));
-//	if (recvSize2 != pBuff->size)
-//	{
-//		free(pBuff);
-//		return NULL;
-//	}
-//	return (DataPackResult*)pBuff;
-//}
 void Client::freeResult(DataPackResult* p) {
 	free(p);
 }
 
-// 功能函数
+// 注册登录
 void Login(Client* client, const char* pAccount, const char* password)
 {
 	CStringA buffer;
@@ -169,6 +97,7 @@ void Register(Client* client, const char* pAccount, const char* password)
 	buffer.Format("%s\n%s", pAccount, password);//账号、密码
 	client->send(registe,buffer,buffer.GetLength());
 }
+// 发消息
 void SendMultiMsg(Client* pClient, const char* pMsg)
 {
 	// 基础版，只发消息
@@ -181,6 +110,23 @@ void SendMsg(Client* pClient, const char* pMsg, CString fromWhere, CString toWhe
 	buffer.Format("%s\n%s\n%s", pMsg, fromWhere, toWhere);//账号、密码
 	pClient->send(sendMsg, buffer, buffer.GetLength());
 }
+void SendRoomMsg(Client* pClient, const char* pMsg, CString fromWhere, CString toWhere)
+{
+	CStringA buff;
+	// 注意: pMsg保存的额字符串中不能带有\n,否则就错误.
+	//	    最好在发送前, 将\n转换成\\n再发送
+	buff.Format("%s\n%s\n%s", pMsg, fromWhere, toWhere);
+	pClient->send(sendMultiMsg, buff, buff.GetLength());
+}
+//void SendRoomMsg(Client* pClient, const char*roomName, const char* pMsg)
+//{
+//	CStringA buff;
+//	// 注意: pMsg保存的额字符串中不能带有\n,否则就错误.
+//	//	    最好在发送前, 将\n转换成\\n再发送
+//	buff.Format("%s\n%s", roomName, pMsg);
+//	pClient->send(sendMultiMsg, buff, buff.GetLength());
+//}
+// 好友相关
 void AddFriend(Client* pClient, const char* pFriendName)
 {
 	CStringA buf;
@@ -202,6 +148,23 @@ void RefuseAddFriend(Client* pClient, const char* pFriendName)
 void GetFriendList(Client* pClient)
 {
 	pClient->send(getFriendList, "");// 空
+}
+// 聊天室相关
+void CreateRoom(Client* pClient, const char* roomName)
+{
+	pClient->send(createRoom, roomName);
+}
+void JoinRoom(Client* pClient, const char* roomName)
+{
+	pClient->send(joinRoom, roomName);
+}
+void GetRoomList(Client* pClient)
+{
+	pClient->send(getroomlist, "");
+}
+void GetRoomMembers(Client* pClient, const char* roomName)
+{
+	pClient->send(getroommember, roomName);
 }
 
 // 线程处理函数（接收消息
@@ -287,24 +250,38 @@ DWORD CALLBACK recvMessageProc(LPVOID arg)
 			//来自服务端通知
 			if (pResult->status == -1)
 			{
-				CString tips;
-				sprintf_s(g_recvMessage, "%s\n", base64_decode(pResult->data).c_str());
-				tips = g_recvMessage;
-				//MessageBox(NULL, tips, L"提示", 0);
 
-				//将收到的消息显示到聊天记录框
-				//CEdit * pEditRecord = (CEdit*)GetDlgItem(g_hpWndChat, IDC_EDIT_RECORD);//出错，将控件句柄设置全局
+				// 提取消息
+				sprintf_s(g_recvMessage, "%s\n", base64_decode(pResult->data).c_str());
+				// 新+旧+时间，再显示在聊天记录框
 				CEdit * pEditRecord = g_pEditChatRecord;// 从全局变量获取控件句柄
-				//获取系统时间
-				CString strTime;
-				CTime tm;
-				tm = CTime::GetCurrentTime();
-				strTime = tm.Format("%Y-%m-%d %X   ");
+				CString strTime = CTime::GetCurrentTime().Format("%Y-%m-%d %X   ");
 				CString oldRecord;
 				pEditRecord->GetWindowText(oldRecord);
-				pEditRecord->SetWindowText(oldRecord + "\r\n" 
-					+ strTime + "[Recv From All]" +"\r\n" 
-					+ ">  "+ g_recvMessage);
+				pEditRecord->SetWindowText(oldRecord + "\r\n"
+					+ strTime + "[Recv]" + "\r\n"
+					+ ">  " + g_recvMessage);
+
+
+				//CString tips;
+				//sprintf_s(g_recvMessage, "%s\n", base64_decode(pResult->data).c_str());
+				//tips = g_recvMessage;
+				////MessageBox(NULL, tips, L"提示", 0);
+				////将收到的消息显示到聊天记录框
+				////CEdit * pEditRecord = (CEdit*)GetDlgItem(g_hpWndChat, IDC_EDIT_RECORD);//出错，将控件句柄设置全局
+				//CEdit * pEditRecord = g_pEditChatRecord;// 从全局变量获取控件句柄
+				////获取系统时间
+				//CString strTime;
+				//CTime tm;
+				//tm = CTime::GetCurrentTime();
+				//strTime = tm.Format("%Y-%m-%d %X   ");
+				//CString oldRecord;
+				//pEditRecord->GetWindowText(oldRecord);
+				//pEditRecord->SetWindowText(oldRecord + "\r\n" 
+				//	+ strTime + "[Recv From All]" +"\r\n" 
+				//	+ ">  "+ g_recvMessage);
+
+
 			}
 			else
 			{
@@ -382,11 +359,6 @@ DWORD CALLBACK recvMessageProc(LPVOID arg)
 				// int转LPCTSTR
 				CString iStr;
 				iStr.Format("%d", i);
-				//LPCTSTR ii = str.AllocSysString();
-				//// char * 转LPCTSTR
-				//int num = MultiByteToWideChar(0, 0, p, -1, NULL, 0);
-				//wchar_t *pp = new wchar_t[num];
-				//MultiByteToWideChar(0, 0, p, -1, pp, num);
 				// 插入行、设置内容
 				pFriendList->InsertItem(0, iStr);
 				pFriendList->SetItemText(0, 1, p);
@@ -395,13 +367,76 @@ DWORD CALLBACK recvMessageProc(LPVOID arg)
 				p = strtok_s(nullptr, "\n", &context);
 			}
 			break;
-
-			
-
-
-
 		}
+		case createRoom:// 创建群
+		{
+			MessageBox(NULL, "创建成功", "提示", MB_OK);
+			break;
+		}
+		case joinRoom:
+		{
+			MessageBox(NULL, "加入成功", "提示", MB_OK);
+			break;
+		}
+		case getroomlist://获取群列表
+		{
 
+			//HWND hFriendList = GetDlgItem(g_hWndChat, IDC_EDIT_FINDFRIEND);
+			CListCtrl * pRoomList = g_pListRoomList;// 从全局变量获取控件句柄
+			// 先清空
+			pRoomList->DeleteAllItems();
+			// 切割好友列表
+			char* context;
+			char *p;
+			char data[100];
+			memcpy_s(data, 100, base64_decode(pResult->data).c_str(), 100);
+			p = strtok_s(data, "\n", &context);// 用2将1分隔得3
+			int i = 1;
+			// 将其填充至好友列表
+			while (p != nullptr)
+			{
+				// int转LPCTSTR
+				CString iStr;
+				iStr.Format("%d", i);
+				// 插入行、设置内容
+				pRoomList->InsertItem(0, iStr);
+				pRoomList->SetItemText(0, 1, p);
+
+				i++;
+				p = strtok_s(nullptr, "\n", &context);
+			}
+			break;
+
+			//// 切割群列表
+			//char* context, *p;
+			//p = strtok_s(pResult->data, "\n", &context);
+			//int i = 1;
+
+			//// 打印
+			//printf("获取到的群列表: \n");
+			//while (p != nullptr)
+			//{
+			//	printf("%d - %s\n", i++, p);
+			//	p = strtok_s(nullptr, "\n", &context);
+			//}
+			//break;
+		}
+		case getroommember:// 获取群成员
+		{
+			// 切割群列表
+			char* context, *p;
+			p = strtok_s(pResult->data, "\n", &context);
+			int i = 1;
+
+			// 打印
+			printf("获取到的群成员列表: \n");
+			while (p != nullptr)
+			{
+				printf("%d - %s\n", i++, p);
+				p = strtok_s(nullptr, "\n", &context);
+			}
+			break;
+		}
 		}
 	}
 	return 0;
