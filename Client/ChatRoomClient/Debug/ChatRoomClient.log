@@ -1,7 +1,6 @@
-﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\VCTargets\Microsoft.CppClean.targets(76,5): warning : 对路径“c:\users\rylynn\source\repos\15pb\debug\chatroomclient.exe”的访问被拒绝。
-  stdafx.cpp
+﻿  stdafx.cpp
   base64.cpp
-c:\users\rylynn\source\repos\15pb\chatroomclient\base64.cpp(70): warning C4267: “=”: 从“size_t”转换到“unsigned char”，可能丢失数据
+c:\users\rylynn\source\repos\15pb\chatroomclient\base64.cpp(69): warning C4267: “=”: 从“size_t”转换到“unsigned char”，可能丢失数据
 c:\users\rylynn\source\repos\15pb\chatroomclient\base64.cpp(87): warning C4267: “=”: 从“size_t”转换到“unsigned char”，可能丢失数据
   CChatDlg.cpp
   ChatRoomClient.cpp
@@ -9,4 +8,4 @@ c:\users\rylynn\source\repos\15pb\chatroomclient\base64.cpp(87): warning C4267: 
   client.cpp
   data.cpp
   正在生成代码...
-LINK : fatal error LNK1104: 无法打开文件“C:\Users\Rylynn\source\repos\15PB\Debug\ChatRoomClient.exe”
+  ChatRoomClient.vcxproj -> C:\Users\Rylynn\source\repos\15PB\Debug\ChatRoomClient.exe

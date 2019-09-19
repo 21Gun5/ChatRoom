@@ -1,18 +1,17 @@
-
 #include "stdafx.h"
 #include "base64.h"
 
 static const std::string base64_chars =
-"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-"abcdefghijklmnopqrstuvwxyz"
-"0123456789+/";
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	"abcdefghijklmnopqrstuvwxyz"
+	"0123456789+/";
 
-
-static inline bool is_base64(unsigned char c) {
+static inline bool is_base64(unsigned char c) 
+{
 	return (isalnum(c) || (c == '+') || (c == '/'));
 }
-
-std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_len) {
+std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_len) 
+{
 	std::string ret;
 	int i = 0;
 	int j = 0;
@@ -54,8 +53,8 @@ std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_
 	return ret;
 
 }
-
-std::string base64_decode(std::string const& encoded_string) {
+std::string base64_decode(std::string const& encoded_string) 
+{
 	int in_len = encoded_string.size();
 	int i = 0;
 	int j = 0;
@@ -79,7 +78,8 @@ std::string base64_decode(std::string const& encoded_string) {
 		}
 	}
 
-	if (i) {
+	if (i) 
+	{
 		for (j = i; j < 4; j++)
 			char_array_4[j] = 0;
 
@@ -94,23 +94,4 @@ std::string base64_decode(std::string const& encoded_string) {
 	}
 
 	return ret;
-}
-
-const char* encode(std::string buf)
-{
-	int len = buf.length();
-	for (int i = 0; i < len; i++)
-	{
-		buf[i] ^= 6;
-	}
-	return buf.c_str();
-}
-
-char* decode(char* buf, int n)
-{
-	for (int i = 0; i < n; i++)
-	{
-		buf[i] ^= 6;
-	}
-	return buf;
 }

@@ -1,22 +1,21 @@
-//// client.cpp : 此文件包含 "main" 函数。程序执行将在此处开始并结束。
-////
-//
 #include "stdafx.h"
 #include "client.h"
+#include "base64.h"
+#include "ChatRoomClientDlg.h"
+
 #include <atlstr.h>
 #include <windows.h>
 #include "CChatDlg.h"
 #include "resource.h"
-#include "ChatRoomClientDlg.h"
-#include "base64.h"
 
-// 全局变量
-bool g_isLogin = false;// 是否登录
-char g_recvMessage[200] = { 0 };// 接收到的消息
-HWND g_hWndChat = NULL;
-CEdit * g_pEditChatRecord = NULL;
-CListCtrl * g_pListFriendList= NULL;
-CListCtrl * g_pListRoomList = NULL;
+
+//// 全局变量
+//bool g_isLogin = false;// 是否登录
+//char g_recvMessage[200] = { 0 };// 接收到的消息
+//HWND g_hWndChat = NULL;
+//CEdit * g_pEditChatRecord = NULL;
+//CListCtrl * g_pListFriendList= NULL;
+//CListCtrl * g_pListRoomList = NULL;
 
 // 类的成员函数
 Client::Client(const char* serverIp, short port)
@@ -45,25 +44,11 @@ void Client::send(DataPackType type, const char* data, uint32_t size)
 	::send(m_hSocket, dataEncode.c_str(), sizeof(dataEncode), 0);
 
 }
+void Client::freeResult(DataPackResult* p) {
+	free(p);
+}
 DataPackResult* Client::recv()
 {
-	//DataPackResult head = { 0 };
-	//if (::recv(m_hSocket, (char*)&head, sizeof(head) - 1, 0) != sizeof(head) - 1)
-	//{
-	//	return NULL;
-	//}
-
-	//DataPackResult* pBuff = (DataPackResult*)malloc(sizeof(DataPackResult) + head.size);
-	//memset(pBuff, 0, head.size + sizeof(DataPackResult));
-	//memcpy(pBuff, &head, sizeof(head));
-
-	//if (::recv(m_hSocket, pBuff->data, pBuff->size, 0) != pBuff->size) 
-	//{
-	//	free(pBuff);
-	//	return NULL;
-	//}
-	//return (DataPackResult*)pBuff;
-
 	DataPackResult head = { 0 };
 	if (::recv(m_hSocket, (char*)&head, sizeof(head) - 1, 0) != sizeof(head) - 1) {
 		return NULL;
@@ -75,13 +60,7 @@ DataPackResult* Client::recv()
 		free(pBuff);
 		return NULL;
 	}
-	// 		for (int i = 0; i < pBuff->size; ++i) {
-	// 			pBuff->data[i] ^= 0x15;
-	// 		}
 	return (DataPackResult*)pBuff;
-}
-void Client::freeResult(DataPackResult* p) {
-	free(p);
 }
 
 // 注册登录
@@ -98,16 +77,11 @@ void Register(Client* client, const char* pAccount, const char* password)
 	client->send(registe,buffer,buffer.GetLength());
 }
 // 发消息
-void SendMultiMsg(Client* pClient, const char* pMsg)
-{
-	// 基础版，只发消息
-	pClient->send(sendMultiMsg, pMsg);// 消息
-}
 void SendMsg(Client* pClient, const char* pMsg, CString fromWhere, CString toWhere)
 {
 	// 进阶版，发送消息、发送者、接收者
 	CStringA buffer;
-	buffer.Format("%s\n%s\n%s", pMsg, fromWhere, toWhere);//账号、密码
+	buffer.Format("%s\n%s\n%s", pMsg, fromWhere, toWhere);
 	pClient->send(sendMsg, buffer, buffer.GetLength());
 }
 void SendRoomMsg(Client* pClient, const char* pMsg, CString fromWhere, CString toWhere)
@@ -116,16 +90,8 @@ void SendRoomMsg(Client* pClient, const char* pMsg, CString fromWhere, CString t
 	// 注意: pMsg保存的额字符串中不能带有\n,否则就错误.
 	//	    最好在发送前, 将\n转换成\\n再发送
 	buff.Format("%s\n%s\n%s", pMsg, fromWhere, toWhere);
-	pClient->send(sendMultiMsg, buff, buff.GetLength());
+	pClient->send(sendRoomMsg, buff, buff.GetLength());
 }
-//void SendRoomMsg(Client* pClient, const char*roomName, const char* pMsg)
-//{
-//	CStringA buff;
-//	// 注意: pMsg保存的额字符串中不能带有\n,否则就错误.
-//	//	    最好在发送前, 将\n转换成\\n再发送
-//	buff.Format("%s\n%s", roomName, pMsg);
-//	pClient->send(sendMultiMsg, buff, buff.GetLength());
-//}
 // 好友相关
 void AddFriend(Client* pClient, const char* pFriendName)
 {
@@ -233,7 +199,7 @@ DWORD CALLBACK recvMessageProc(LPVOID arg)
 			continue;
 		}
 		// 操作失败则弹窗提醒
-		if (pResult->status > 0)
+		if (pResult->status > 0&& pResult->status <= 6)// 错误码（曲线救国，这很玄学
 		{
 			CString tips;
 			char buff[100];
@@ -245,7 +211,7 @@ DWORD CALLBACK recvMessageProc(LPVOID arg)
 		}
 		switch (pResult->type)
 		{
-		case sendMultiMsg:// 广播消息
+		case sendRoomMsg:// 广播消息
 		{
 			//来自服务端通知
 			if (pResult->status == -1)

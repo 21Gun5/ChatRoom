@@ -170,6 +170,7 @@ HCURSOR CChatRoomClientDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+
 void CChatRoomClientDlg::OnClickedButtonRegister()
 {
 	// TODO: 在此添加控件通知处理程序代码
@@ -178,21 +179,6 @@ void CChatRoomClientDlg::OnClickedButtonRegister()
 	// 获取密码和用户框的内容
 	m_EditUserName.GetWindowText(userName);
 	m_EditPassWord.GetWindowText(passWord);
-
-	// CString转const char *
-	//const char * suserName = (LPCSTR)(LPCTSTR)userName;
-	//const char * spassWord = (LPCSTR)(LPCTSTR)passWord;//错误，只保留一个字符
-	//size_t  i;
-	//const wchar_t* wstr = (LPCTSTR)userName;
-	//const wchar_t* wstr2 = (LPCTSTR)passWord;
-	//char suserName[20] = { 0 };
-	//char spassWord[20] = { 0 };
-	//setlocale(LC_ALL, "chs");
-	//wcstombs_s(&i, suserName, wstr, wcslen(wstr));
-	//const char * ssuserName = suserName;//不加则插入数据库失败
-	//const char * sspassWord = spassWord;
-	//wcstombs_s(&i, spassWord, wstr2, wcslen(wstr2));
-	//setlocale(LC_ALL, "C");
 
 	// 判断内容是否为空
 	if (userName.IsEmpty() || passWord.IsEmpty())
@@ -203,7 +189,6 @@ void CChatRoomClientDlg::OnClickedButtonRegister()
 		//MessageBox(CString("注册成功 \n用户名: ") + userName+ "\n" + CString("密   码: ") + passWord);
 	}
 }
-
 void CChatRoomClientDlg::OnClickedButtonLogin()
 {
 	// TODO: 在此添加控件通知处理程序代码
@@ -212,19 +197,6 @@ void CChatRoomClientDlg::OnClickedButtonLogin()
 	// 获取密码和用户框的内容
 	m_EditUserName.GetWindowText(userName);
 	m_EditPassWord.GetWindowText(passWord);
-
-	//// CString转const char *
-	//size_t  i;
-	//const wchar_t* wstr = (LPCTSTR)userName;
-	//const wchar_t* wstr2 = (LPCTSTR)passWord;
-	//char suserName[20] = { 0 };
-	//char spassWord[20] = { 0 };
-	//setlocale(LC_ALL, "chs");
-	//wcstombs_s(&i, suserName, wstr, wcslen(wstr));
-	//const char * ssuserName = suserName;//不加则插入数据库失败
-	//const char * sspassWord = spassWord;
-	//wcstombs_s(&i, spassWord, wstr2, wcslen(wstr2));
-	//setlocale(LC_ALL, "C");
 
 	// 判断内容是否为空
 	if (userName.IsEmpty() || passWord.IsEmpty())
@@ -236,11 +208,8 @@ void CChatRoomClientDlg::OnClickedButtonLogin()
 		if (g_isLogin)
 		{
 			g_CurAccount = userName;// 设置当前用户
-
 			CChatDlg chatZoneDlg(this);
 			chatZoneDlg.DoModal();
-			//// 新开一个线程，接收消息
-			//CreateThread(0, 0, recvProc2, &g_pClient, 0, 0);
 		}
 
 	}

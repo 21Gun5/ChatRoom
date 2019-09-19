@@ -19,7 +19,6 @@ CChatDlg::CChatDlg(CWnd* pParent /*=nullptr*/)
 {
 
 }
-
 CChatDlg::~CChatDlg()
 {
 }
@@ -28,7 +27,6 @@ void CChatDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_EDIT_ADDFRIEND, m_EditAddFriend);
-	//  DDX_Text(pDX, IDC_STATIC_CURUSER, m_currentAccount);
 	DDX_Control(pDX, IDC_EDIT_CHAT, m_EditChatInput);
 	DDX_Control(pDX, IDC_EDIT_RECORD, m_EditChatRecord);
 	DDX_Control(pDX, IDC_EDIT_CURUSR, m_EditCurrentAccount);
@@ -37,7 +35,6 @@ void CChatDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDIT_JOINROOM, m_EditJoinRoom);
 	DDX_Control(pDX, IDC_LIST_ROOMLIST, m_ListRoomList);
 }
-
 
 BEGIN_MESSAGE_MAP(CChatDlg, CDialogEx)
 	ON_WM_CLOSE()
@@ -50,12 +47,7 @@ BEGIN_MESSAGE_MAP(CChatDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_F5ROOMLIST, &CChatDlg::OnClickedButtonF5roomlist)
 END_MESSAGE_MAP()
 
-
 // CChatZone 消息处理程序
-
-
-
-
 
 BOOL CChatDlg::OnInitDialog()
 {
@@ -100,8 +92,6 @@ BOOL CChatDlg::OnInitDialog()
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 异常: OCX 属性页应返回 FALSE
 }
-
-
 void CChatDlg::OnClose()
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
@@ -115,7 +105,6 @@ void CChatDlg::OnClose()
 
 	CDialogEx::OnClose();
 }
-
 
 void CChatDlg::OnClickedButtonSend()
 {
@@ -139,7 +128,6 @@ void CChatDlg::OnClickedButtonSend()
 			if (m_ListFriendList.GetCheck(i))
 			{
 				// 发送消息
-				//SendMultiMsg(g_pClient, message);//广播
 				CString sendToWho = m_ListFriendList.GetItemText(i, 1);
 				SendMsg(g_pClient, message, g_CurAccount, sendToWho);// 单播、多播
 
@@ -224,8 +212,6 @@ void CChatDlg::OnClickedButtonCreateroom()
 	else
 		CreateRoom(g_pClient, roomName);
 }
-
-
 void CChatDlg::OnClickedButtonJoinroom()
 {
 	// TODO: 在此添加控件通知处理程序代码
@@ -239,8 +225,6 @@ void CChatDlg::OnClickedButtonJoinroom()
 	else
 		JoinRoom(g_pClient, roomName);
 }
-
-
 void CChatDlg::OnClickedButtonF5roomlist()
 {
 	// TODO: 在此添加控件通知处理程序代码
